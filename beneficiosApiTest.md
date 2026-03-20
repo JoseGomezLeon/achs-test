@@ -693,12 +693,12 @@ export const testCases: BeneficioTestCase[] = [
   },
 ];
 
-  ## Instrucciones de ejecucion ##
-  1. Descargar proyecto achs-test desde xxxxxxxxxxxxxxxxxxxxxxxxxxx
+  ## Instrucciones de ejecucion directa ##
+  1. Descargar proyecto achs-test desde (https://github.com/JoseGomezLeon/achs-test)
   2. Instalar Node.js
   3. Instalar Playwright.
   4. Ejecutar la Api apiMock.mjs
-  5. Desde la ruta del proyecto, ejecutar entrega.js
+  5. Desde la ruta raiz del proyecto, ejecutar npx playwright test tests/entrega.spec.js --project=chromium
 
 
 
