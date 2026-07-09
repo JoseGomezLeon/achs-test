@@ -8,6 +8,7 @@ test.group('AccessContextBuilder / humanos @smoke', () => {
     const ctx = AccessContextBuilder.fromClaims(claims)
 
     assert.equal(ctx.subject.kind, 'human')
+    if (ctx.subject.kind !== 'human') throw new Error('expected human subject')
     assert.equal(ctx.subject.userId, 'stub-user-analista-rm-norte')
     assert.equal(ctx.subject.orgUnit, 'RM-Norte')
     assert.isTrue(ctx.can('prestacion:otorgar'))

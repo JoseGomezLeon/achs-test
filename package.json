@@ -18,7 +18,7 @@
     "build:frontend": "vite build && mkdir -p public && cp -r build/public/assets public/",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "typecheck": "tsc --noEmit && tsc --noEmit --project inertia/tsconfig.json"
+    "typecheck": "tsc --noEmit --project tsconfig.check.json"
   },
   "imports": {
     "#controllers/*": "./app/controllers/*.js",

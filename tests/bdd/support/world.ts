@@ -2,7 +2,6 @@ import { setWorldConstructor, World, type IWorldOptions } from '@cucumber/cucumb
 import { StubIamAdapter } from '../../stubs/stub-iam-adapter.js'
 import { StubAuditWriter } from '../../stubs/stub-audit-writer.js'
 import type { TokenClaims } from '../../../app/modules/rbac/domain/iam/token-claims.js'
-import { AuthenticationError } from '../../../app/modules/rbac/domain/iam/iam-adapter.js'
 import {
   AccessContextBuilder,
   type AccessContext,

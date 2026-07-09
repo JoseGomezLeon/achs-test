@@ -1,0 +1,18 @@
+{
+  "extends": "@adonisjs/tsconfig/tsconfig.app.json",
+  "compilerOptions": {
+    "rootDir": "./",
+    "jsx": "react",
+    "outDir": "./build",
+    "skipLibCheck": true
+  },
+  "include": [
+    "app/modules/**/*.ts",
+    "tests/unit/**/*.ts",
+    "tests/bdd/support/world.ts",
+    "tests/bdd/steps/**/*.ts",
+    "tests/stubs/**/*.ts",
+    "tests/bootstrap.ts"
+  ],
+  "exclude": ["node_modules/**", "build/**"]
+}
