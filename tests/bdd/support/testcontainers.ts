@@ -1,4 +1,4 @@
-import { PostgreSqlContainer, type StartedPostgreSqlContainer } from 'testcontainers'
+import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql'
 
 let pg: StartedPostgreSqlContainer | null = null
 

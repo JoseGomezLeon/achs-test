@@ -1,0 +1,114 @@
+name: CI Nivel 2 — Release/Nightly (~40 min)
+
+on:
+  schedule:
+    - cron: '0 2 * * *'   # nightly 02:00 UTC
+  workflow_dispatch:       # disparo manual para pruebas
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  nivel2:
+    name: BDD + Docker build + k6 + SemVer
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      NODE_ENV: test
+      PORT: 3333
+      HOST: localhost
+      LOG_LEVEL: warn
+      APP_KEY: ${{ secrets.APP_KEY }}
+      APP_URL: http://localhost:3333
+      SESSION_DRIVER: memory
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      # ── BDD (Desarrollo Guiado por Comportamiento) — 113 escenarios ──
+      # Los escenarios actuales usan stubs de dominio puro (sin DB).
+      # Cuando se implemente la capa de persistencia, activar Testcontainers
+      # cambiando TEST_MODE a "integration" y levantando Postgres aquí.
+      - name: BDD — 113 escenarios de comportamiento de negocio
+        env:
+          TEST_MODE: architecture
+        run: |
+          node --import tsx/esm ./node_modules/.bin/cucumber-js \
+            --import tests/bdd/support/world.ts \
+            --import 'tests/bdd/steps/**/*.ts' \
+            'tests/bdd/features/**/*.feature' \
+            --format allure-cucumberjs/reporter --format progress-bar
+
+      - name: Publicar reporte Allure (BDD)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-results-bdd
+          path: allure-results/
+          retention-days: 30
+
+      # ── k6 Performance smoke ───────────────────────────────────────
+      - name: Instalar k6
+        run: |
+          sudo snap install k6 || \
+          (curl -s https://packagecloud.io/install/repositories/loadimpact/k6/script.deb.sh | sudo bash && \
+           sudo apt-get install k6 -y)
+
+      - name: Levantar servidor AdonisJS
+        run: |
+          npx tsx bin/server.ts &
+          echo $! > /tmp/server.pid
+          npx wait-on http://localhost:3333 --timeout 30000
+
+      - name: k6 — smoke test GET / (30s · 1 VU · p95 < 500ms)
+        run: k6 run tests/performance/k6-load.js
+
+      - name: Detener servidor
+        if: always()
+        run: kill $(cat /tmp/server.pid) 2>/dev/null || true
+
+      # ── Pact — Contract Testing ────────────────────────────────────
+      # PLACEHOLDER: activar cuando exista un segundo servicio consumidor.
+      # Requiere: Pact Broker URL + credenciales en secrets.
+      # - name: Pact — verificar contratos del proveedor
+      #   run: npx tsx tests/contract/rbac/provider.ts
+      #   env:
+      #     PACT_BROKER_URL: ${{ secrets.PACT_BROKER_URL }}
+      #     PACT_BROKER_TOKEN: ${{ secrets.PACT_BROKER_TOKEN }}
+
+      # ── Docker build + healthcheck ─────────────────────────────────
+      - name: Docker build imagen RBAC
+        run: docker build -t pec-rbac:${{ github.sha }} .
+
+      - name: Docker healthcheck
+        run: |
+          docker run -d --name pec-rbac-test \
+            -e NODE_ENV=test -e PORT=3334 -e HOST=0.0.0.0 \
+            -e LOG_LEVEL=warn -e APP_KEY=test-key-32-chars-minimum-here \
+            -e APP_URL=http://localhost:3334 -e SESSION_DRIVER=memory \
+            -e DB_CONNECTION=sqlite -e DB_DATABASE=':memory:' \
+            -p 3334:3334 pec-rbac:${{ github.sha }}
+          sleep 5
+          curl -f http://localhost:3334/ || (docker logs pec-rbac-test && exit 1)
+          docker stop pec-rbac-test
+
+      # ── SemVer tag en release ──────────────────────────────────────
+      - name: Tag SemVer en release
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "Version: $VERSION"
+          git tag -a "v${VERSION}-ci-$(date +%Y%m%d)" -m "CI Nivel 2 release" || true
