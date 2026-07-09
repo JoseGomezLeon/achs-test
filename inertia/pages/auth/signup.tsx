@@ -10,7 +10,7 @@ export default function Signup() {
 
       <div>
         <Form route="new_account.store">
-          {({ errors }) => (
+          {({ errors }: { errors: Record<string, string> }) => (
             <>
               <div>
                 <label htmlFor="fullName">Full name</label>

@@ -10,7 +10,7 @@ export default function Login() {
 
       <div>
         <Form route="session.store">
-          {({ errors }) => (
+          {({ errors }: { errors: Record<string, string> }) => (
             <>
               <div>
                 <label htmlFor="email">Email</label>
