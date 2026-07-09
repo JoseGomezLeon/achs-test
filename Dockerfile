@@ -7,7 +7,7 @@ COPY package*.json ./
 RUN npm ci --ignore-scripts
 
 COPY . .
-RUN npm run build
+RUN npm run build && mkdir -p public
 
 ## Stage 2 — Runner
 FROM node:22-alpine AS runner
