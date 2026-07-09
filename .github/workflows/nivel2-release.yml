@@ -105,7 +105,7 @@ jobs:
             -e DB_CONNECTION=sqlite -e DB_DATABASE=':memory:' \
             -p 3334:3334 pec-rbac:${{ github.sha }}
           sleep 5
-          curl -f http://localhost:3334/ || (docker logs pec-rbac-test && exit 1)
+          curl -f http://localhost:3334/health || (docker logs pec-rbac-test && exit 1)
           docker stop pec-rbac-test
 
       # ── SemVer tag en release ──────────────────────────────────────
