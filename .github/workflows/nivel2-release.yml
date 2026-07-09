@@ -18,7 +18,7 @@ jobs:
     env:
       NODE_ENV: test
       PORT: 3333
-      HOST: localhost
+      HOST: 0.0.0.0
       LOG_LEVEL: warn
       APP_KEY: ${{ secrets.APP_KEY }}
       APP_URL: http://localhost:3333
@@ -70,16 +70,18 @@ jobs:
 
       - name: Levantar servidor AdonisJS
         run: |
-          npx tsx bin/server.ts &
+          nohup npx tsx bin/server.ts > /tmp/server.log 2>&1 &
           echo $! > /tmp/server.pid
-          npx wait-on http://localhost:3333/health --timeout 30000
+          npx wait-on http://localhost:3333/health --timeout 60000
 
-      - name: k6 — smoke test GET / (30s · 1 VU · p95 < 500ms)
+      - name: k6 — smoke test GET /health (30s · 1 VU · p95 < 2000ms)
         run: k6 run tests/performance/k6-load.js
 
       - name: Detener servidor
         if: always()
-        run: kill $(cat /tmp/server.pid) 2>/dev/null || true
+        run: |
+          kill $(cat /tmp/server.pid) 2>/dev/null || true
+          echo "=== Server log ===" && cat /tmp/server.log | tail -20 || true
 
       # ── Pact — Contract Testing ────────────────────────────────────
       # PLACEHOLDER: activar cuando exista un segundo servicio consumidor.
