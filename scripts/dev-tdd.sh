@@ -113,21 +113,24 @@ AFF_PID=$!
 # ─────────────────────────────────────────────
 echo -e "${CYAN}[TDD] Iniciando Japa unit watch — spec reporter activo${NC}"
 (
-  UNIT_FILES=$(find tests/unit -name "*.spec.ts" | tr '\n' ',' | sed 's/,$//')
+  run_unit() {
+    # Recomputa la lista en cada llamada — detecta specs nuevas agregadas en la sesión
+    local files
+    files=$(find tests/unit -name "*.spec.ts" | tr '\n' ',' | sed 's/,$//')
+    NODE_ENV=test TEST_MODE=architecture npx tsx bin/test.ts \
+      --files "$files" 2>&1 \
+      | sed "s/^/$(printf '\033[0;36m')[TDD]$(printf '\033[0m') /"
+  }
   # Corre una vez al arrancar
   echo -e "${CYAN}[TDD] Corriendo suite inicial...${NC}"
-  NODE_ENV=test TEST_MODE=architecture npx tsx bin/test.ts \
-    --files "$UNIT_FILES" 2>/dev/null \
-    | sed "s/^/$(printf '\033[0;36m')[TDD]$(printf '\033[0m') /"
+  run_unit
   touch /tmp/.tdd-marker
   while true; do
     sleep 2
     CHANGED=$(find tests/unit app/modules -name "*.ts" -newer /tmp/.tdd-marker 2>/dev/null | wc -l)
     if [ "$CHANGED" -gt 0 ]; then
       echo -e "${CYAN}[TDD] Cambio detectado — re-corriendo tests...${NC}"
-      NODE_ENV=test TEST_MODE=architecture npx tsx bin/test.ts \
-        --files "$UNIT_FILES" 2>/dev/null \
-        | sed "s/^/$(printf '\033[0;36m')[TDD]$(printf '\033[0m') /"
+      run_unit
       touch /tmp/.tdd-marker
     fi
   done

@@ -1,0 +1,50 @@
+{
+  "proxies": [
+    {
+      "name": "entra-id",
+      "listen": "0.0.0.0:8443",
+      "upstream": "login.microsoftonline.com:443",
+      "description": "Proxy de Entra ID — para inyectar fallos en autenticación OIDC"
+    },
+    {
+      "name": "postgres",
+      "listen": "0.0.0.0:5432",
+      "upstream": "postgres:5432",
+      "description": "Proxy de Postgres — para inyectar fallos en persistencia de audit"
+    }
+  ],
+  "scenarios": {
+    "entra-id-timeout": {
+      "proxy": "entra-id",
+      "toxic": {
+        "type": "timeout",
+        "attributes": { "timeout": 3000 }
+      },
+      "description": "IamAdapter.authenticate lanza AuthenticationError si Entra ID no responde en 3s"
+    },
+    "entra-id-latency": {
+      "proxy": "entra-id",
+      "toxic": {
+        "type": "latency",
+        "attributes": { "latency": 500, "jitter": 100 }
+      },
+      "description": "IamAdapter.authenticate con latencia — verifica que el middleware no cuelga el request"
+    },
+    "entra-id-down": {
+      "proxy": "entra-id",
+      "toxic": {
+        "type": "reset_peer",
+        "attributes": {}
+      },
+      "description": "Entra ID no disponible — IamAdapter lanza AuthenticationError con code=unauthenticated"
+    },
+    "audit-timeout": {
+      "proxy": "postgres",
+      "toxic": {
+        "type": "timeout",
+        "attributes": { "timeout": 2000 }
+      },
+      "description": "AppAuditWriter falla — la decisión de autorización ya fue tomada, el request no debe fallar"
+    }
+  }
+}

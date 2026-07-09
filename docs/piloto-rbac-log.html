@@ -23,7 +23,40 @@ header p{font-size:11px;color:#94a3b8;margin-top:2px}
 .prog-bar-bg{flex:1;height:10px;background:#e2e8f0;border-radius:999px;overflow:hidden}
 .prog-bar-fill{height:100%;background:linear-gradient(90deg,#2563eb,#16a34a);border-radius:999px;transition:width .35s ease}
 .prog-label{font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap;min-width:110px;text-align:right}
-main{max-width:1080px;margin:0 auto;padding:18px 16px 60px}
+main{padding:18px 16px 60px}
+/* ── layout dos columnas ── */
+.page-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;align-items:start}
+.left-col{min-width:0}
+.right-col{position:sticky;top:124px;height:calc(100vh - 128px);overflow-y:auto;padding:14px 14px 14px 0}
+/* panel tests */
+.tpanel{background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 2px 8px rgba(0,0,0,.08);overflow:hidden;font-size:11px}
+.tpanel-hdr{padding:10px 14px;border-bottom:2px solid #0f172a;display:flex;align-items:center;gap:8px}
+.tpanel-hdr h2{font-size:13px;font-weight:800;color:#0f172a;letter-spacing:.02em;flex:1}
+.tpanel-tots{font-size:10px;color:var(--muted);font-weight:700}
+.tenv{border-bottom:1px solid var(--border)}
+.tenv-hdr{padding:7px 12px;font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none}
+.tenv-local .tenv-hdr{color:#475569;background:#f8fafc}
+.tenv-git .tenv-hdr{color:#1e40af;background:#eff6ff}
+.tenv-ci .tenv-hdr{color:#fff;background:#1e3a8a}
+.tenv-cd .tenv-hdr{color:#fff;background:#064e3b}
+.tenv-badge{font-size:10px;font-weight:800;border-radius:3px;padding:1px 6px;margin-left:auto;white-space:nowrap}
+.bg{background:#dcfce7;color:#15803d}.by{background:#fef9c3;color:#854d0e}.br{background:#fee2e2;color:#991b1b}
+.tenv-ci .tenv-badge,.tenv-cd .tenv-badge{background:rgba(255,255,255,.22);color:#fff}
+.tenv-body{display:none;background:#fff}
+.tenv.open .tenv-body{display:block}
+.tsuite{border-top:1px solid #f1f5f9}
+.tsuite-hdr{display:flex;align-items:center;gap:6px;padding:5px 12px;cursor:pointer;font-weight:700;color:#1e293b}
+.tsuite-hdr:hover{background:#f8fafc}
+.tsuite-label{flex:1;font-size:11px}
+.tsuite-body{display:none;padding-bottom:4px}
+.tsuite.open .tsuite-body{display:block}
+.tchev{font-size:10px;color:var(--muted);transition:transform .15s}
+.tsuite.open .tchev{transform:rotate(90deg)}
+.tgroup-lbl{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:5px 22px 2px}
+.tc{display:flex;align-items:flex-start;gap:5px;padding:2px 22px;line-height:1.4}
+.tcdot{width:7px;height:7px;border-radius:999px;flex-shrink:0;margin-top:3px}
+.tc.g .tcdot{background:#16a34a}.tc.y .tcdot{background:#d97706}.tc.r .tcdot{background:#dc2626}
+.tc.g{color:#166534}.tc.y{color:#92400e}.tc.r{color:#991b1b}
 .hero{display:grid;grid-template-columns:1.6fr 1fr;gap:12px;margin-bottom:14px}
 .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 1px 3px rgba(0,0,0,.04);padding:14px}
 .panel h2{font-size:13px;color:#0f172a;margin-bottom:8px}
@@ -138,7 +171,8 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--phase-color,#2563
   </div>
 </div>
 
-<main>
+<div class="page-grid">
+<main class="left-col">
   <section class="hero">
     <div class="panel">
       <h2>Estado vivo</h2>
@@ -171,6 +205,10 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--phase-color,#2563
 
   <div id="phases"></div>
 </main>
+<div class="right-col">
+  <div class="tpanel" id="testPanel"></div>
+</div>
+</div>
 
 <script>
 const STORE_KEY = 'pec-rbac-log-v1';
@@ -184,6 +222,7 @@ const PHASES = [
       {id:'p0t3', text:'Git configurado en el proyecto', status:'done', cmd:'git status', note:'Verificado: rama feature/rbac-pilot activa. Repo creado con git init + primer commit antes de inicializar AdonisJS.'},
       {id:'p0t4', text:'Inicializar AdonisJS 6 en pec-rbac-pilot (crea package.json y estructura base)', status:'done', cmd:'cd /tmp/adonis-init-tmp && npm init adonisjs@latest .', note:'PROBLEMA 1: correr npm init adonisjs@latest . en el repo existente no crea archivos — el CLI detecta el directorio no vacío y aborta silenciosamente. SOLUCIÓN: crear directorio limpio en /tmp/adonis-init-tmp, correr el init allí, luego rsync al repo. Kit elegido: React app (using Inertia). La última tarea del wizard (generate:key) devuelve exit code 1 pero el APP_KEY SÍ queda generado en .env. RSYNC: rsync -a --exclude=node_modules --exclude=.git --exclude=README.md --exclude=docs --exclude=tests /tmp/adonis-init-tmp/ /home/jagomezl/pec-rbac-pilot/ — luego cp tests/bootstrap.ts y npm install. PROBLEMA 2: node ace falla con Unknown file extension .ts — @poppinss/ts-exec no registra el hook correctamente en Node v22. SOLUCIÓN: tsx ya estaba en devDependencies (v4.23.0); actualizar scripts en package.json de "node ace" a "tsx ace".'},
       {id:'p0t5', text:'gh CLI instalado (para gh run watch en CI)', status:'done', cmd:'gh --version', note:'gh version 2.96.0 (2026-07-02). Instalado via repositorio oficial de GitHub CLI: curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg && echo "deb [arch=$(dpkg --print-architecture) signed-by=...] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list && sudo apt update && sudo apt install gh -y'},
+      {id:'p0t6', text:'Repositorio remoto creado en GitHub y conectado al repo local antes del primer ciclo TDD', status:'done', cmd:'gh repo create pec-rbac-pilot --private --source=. --remote=origin && git push -u origin feature/rbac-pilot', note:'LECCIÓN APRENDIDA: el repo remoto debe existir antes del primer commit del ciclo TDD, no después. Sin remote no hay gh pr create ni pipeline CI. Orden correcto en futuros proyectos: (1) gh repo create, (2) git remote add origin, (3) primer push de main, (4) crear rama feature, (5) iniciar ciclo TDD.'},
     ]},
   {id:'p1', icon:'📦', color:'#2563eb', title:'Instalación del Stack', sub:'Ejecutar install-test-stack.sh y verificar cada herramienta',
     tasks:[
@@ -247,7 +286,7 @@ const PHASES = [
       {id:'ptddt4', text:'I3 · TDD GREEN — Código mínimo para pasar el test (IoC registra implementación real sobre SQLite)', status:'done', note:'Código mínimo: solo lo necesario para pasar el test. No anticipar casos futuros ni implementar lógica extra. El IoC registra la implementación real en vez del stub. Corre sobre SQLite in-memory — sin Postgres todavía.'},
       {id:'ptddt5', text:'Japa watcher detecta GREEN — confirmar cero regresiones en la suite completa', status:'done', note:'GREEN válido: el nuevo test pasa Y todos los tests anteriores siguen pasando. Si algún test anterior regresa → volver a I1 e investigar la regresión antes de continuar.'},
       {id:'ptddt6', text:'I4 · Refactor + BDD — Refactorizar sin romper tests + correr el .feature del sprint', status:'done', note:'Refactorizar con AFF watcher activo. Luego correr el escenario Cucumber del sprint — el .feature debe pasar completamente. Si el .feature falla, el refactor no terminó.'},
-      {id:'ptddt7', text:'I5 · Pre-commit Gate — git commit activa hook: Gitleaks + AFF + test suite completa', status:'todo', cmd:'git commit -m "feat(rbac): ..."', note:'El hook rechaza el commit si: hay secrets (Gitleaks), hay violaciones AFF (dep-cruiser), o el test suite no pasa. NUNCA usar --no-verify. Si el hook rechaza, corregir la causa raíz y volver a intentar el commit.'},
+      {id:'ptddt7', text:'I5 · Pre-commit Gate — git commit activa hook: Gitleaks + AFF + test suite completa', status:'done', cmd:'git commit -m "feat(rbac): ..."', note:'El hook rechaza el commit si: hay secrets (Gitleaks), hay violaciones AFF (dep-cruiser), o el test suite no pasa. NUNCA usar --no-verify. Si el hook rechaza, corregir la causa raíz y volver a intentar el commit.'},
       {id:'ptddt8', text:'I6 · PR creada — push + gh pr create con evidencia de tests y referencia al ADR', status:'todo', cmd:'gh pr create --title "feat(rbac): ..." --body "..."', note:'La PR debe incluir: referencia al ADR de RBAC, evidencia del test suite en verde, checklist de compliance RBAC. La PR dispara automáticamente el Pipeline Nivel 1. Repetir I1→I6 por cada historia/escenario del sprint.', sepBefore:true},
     ]},
   {id:'p5', icon:'📈', color:'#ea580c', title:'k6 — Performance', sub:'Smoke de performance con dashboard en tiempo real',
@@ -529,7 +568,181 @@ function resetAll(){
   render();
 }
 
+// ── TESTS DATA ───────────────────────────────────────────────
+const TESTS = [
+  {id:'local', label:'LOCAL', cls:'tenv-local', open:true, suites:[
+    {id:'unit', icon:'🧪', label:'Unit — Construcción del Contexto de Acceso', passed:19, total:19, groups:[
+      {label:'Sujetos humanos — resolución de permisos por rol', cases:[
+        {s:'g',n:'El analista de RM-Norte obtiene los permisos de su rol (otorgar, denegar y consultar prestaciones) y su unidad organizacional queda registrada como "RM-Norte"'},
+        {s:'g',n:'El supervisor puede aprobar un cierre mensual pero NO puede solicitarlo (son responsabilidades distintas)'},
+        {s:'g',n:'El operador de pagos puede solicitar y calcular un cierre pero NO puede aprobarlo (evita auto-aprobación)'},
+      ]},
+      {label:'Sujetos agentes — workers y procesos batch', cases:[
+        {s:'g',n:'El job de producción de pagos recibe el permiso de ejecutar cierre, no el de aprobarlo ni el de otorgar prestaciones'},
+      ]},
+      {label:'Sujetos externos — acceso acotado por ley', cases:[
+        {s:'g',n:'El empleador puede consultar el estado de un hecho causal pero no puede otorgar ni denegar prestaciones'},
+      ]},
+      {label:'Principio deny-by-default', cases:[
+        {s:'g',n:'Un token sin grupos ni roles no obtiene ningún permiso — el acceso denegado es el estado inicial'},
+      ]},
+      {label:'Matriz de capacidades por rol humano', cases:[
+        {s:'g',n:'Analista: puede otorgar, denegar y consultar prestaciones'},
+        {s:'g',n:'Analista: NO puede aprobar el cierre mensual (es responsabilidad del supervisor)'},
+        {s:'g',n:'Supervisor: puede aprobar cierre y consultar liquidaciones'},
+        {s:'g',n:'Supervisor: NO puede calcular la liquidación directamente (es responsabilidad del operador)'},
+        {s:'g',n:'Supervisor: NO puede solicitar cierre (es responsabilidad del operador de pagos)'},
+        {s:'g',n:'Operador de pagos: puede solicitar cierre y calcular liquidaciones'},
+        {s:'g',n:'Operador de pagos: NO puede aprobar el cierre que él mismo solicitó'},
+        {s:'g',n:'Operador de pagos: NO puede otorgar ni denegar prestaciones'},
+        {s:'g',n:'Auditor: solo puede leer el registro de auditoría, sin capacidad de operar'},
+        {s:'g',n:'Admin de gobernanza: acumula las capacidades críticas de todos los roles'},
+      ]},
+      {label:'Matriz de capacidades externas', cases:[
+        {s:'g',n:'Empleador: puede consultar el estado de un hecho causal'},
+        {s:'g',n:'Empleador: NO puede otorgar prestaciones — esa capacidad es exclusiva de analistas ACHS'},
+      ]},
+      {label:'Sin acceso sin rol', cases:[
+        {s:'g',n:'Un conjunto de capacidades vacío no habilita ninguna operación — la negación es el punto de partida'},
+      ]},
+    ]},
+    {id:'aff', icon:'🏛️', label:'AFF — Fitness Functions', passed:11, total:11, groups:[
+      {label:'Aislamiento del dominio', cases:[
+        {s:'g',n:'Las reglas de permisos no dependen del framework — pueden testearse sin AdonisJS'},
+        {s:'g',n:'La capa de identidad — IAM (Gestión de Identidad y Acceso) — no depende del framework: es portable y testeable en aislamiento'},
+        {s:'g',n:'IAM (Gestión de Identidad y Acceso) no conoce otros módulos del dominio — cada módulo resuelve solo sus responsabilidades'},
+        {s:'g',n:'El autorizador no accede directamente a IAM (Gestión de Identidad y Acceso) — solo consume el contexto de acceso ya resuelto'},
+        {s:'g',n:'El servicio de autorización es dominio puro — no depende del framework'},
+      ]},
+      {label:'Integridad del flujo de dependencias', cases:[
+        {s:'g',n:'El contexto de acceso no importa al autorizador — el flujo va en una sola dirección'},
+        {s:'g',n:'La auditoría no depende de quién autorizó — registra hechos de forma independiente'},
+        {s:'g',n:'El registro de agentes no depende del framework — consultable desde cualquier capa'},
+        {s:'g',n:'Los middlewares no contienen lógica de negocio — delegan al dominio RBAC (Control de Acceso Basado en Roles) sin replicarlo'},
+      ]},
+      {label:'Seguridad estructural', cases:[
+        {s:'g',n:'Ningún módulo RBAC (Control de Acceso Basado en Roles) tiene dependencias circulares entre sí'},
+        {s:'g',n:'El código de producción no importa dobles de prueba — los stubs nunca llegan a producción'},
+      ]},
+    ]},
+    {id:'bdd', icon:'🥒', label:'BDD — Comportamiento de Negocio', passed:113, total:113, groups:[
+      {label:'7 features · 113 escenarios verificados', cases:[
+        {s:'g',n:'Autenticación: un token válido identifica correctamente si el sujeto es humano, agente o externo'},
+        {s:'g',n:'Capacidades humanas: cada rol tiene exactamente los permisos que le corresponden, ni más ni menos'},
+        {s:'g',n:'Deny-by-default: sin rol asignado no se obtiene ningún permiso, aunque el token sea válido'},
+        {s:'g',n:'Cierre mensual: el cierre requiere doble firma — quien solicita no puede ser quien aprueba'},
+        {s:'g',n:'Relación de contexto: un analista solo puede actuar sobre prestaciones de su propia unidad organizacional'},
+        {s:'g',n:'Acceso externo: empleadores y sistemas externos solo ven la información que la ley les permite'},
+        {s:'g',n:'Contratos de error: token inválido, acceso denegado y violación de relación retornan el código correcto'},
+      ]},
+    ]},
+    {id:'e2e', icon:'🌐', label:'E2E — Integración con navegador', passed:3, total:3, groups:[
+      {label:'Interfaz React + AdonisJS (Playwright)', cases:[
+        {s:'g',n:'La aplicación carga correctamente y el componente React se renderiza sin errores'},
+        {s:'g',n:'La pantalla de login tiene los campos de email y contraseña accesibles'},
+        {s:'g',n:'El servidor responde en menos de 500 ms para la ruta principal'},
+      ]},
+    ]},
+  ]},
+  {id:'git', label:'GIT / REMOTO', cls:'tenv-git', open:false, suites:[
+    {id:'pr', icon:'🔀', label:'PR — gh pr create', passed:0, total:1, groups:[
+      {label:'ptddt8', cases:[
+        {s:'y',n:'PR con evidencia de tests y referencia al ADR'},
+      ]},
+    ]},
+  ]},
+  {id:'ci', label:'CI — Integración Continua', cls:'tenv-ci', open:false, suites:[
+    {id:'nivel1', icon:'🚀', label:'Pipeline Nivel 1 (~10 min)', passed:0, total:4, groups:[
+      {label:'p7 — lint + typecheck + @smoke + AFF + Sonar', cases:[
+        {s:'y',n:'lint + typecheck'},
+        {s:'y',n:'unit SQLite @smoke'},
+        {s:'y',n:'AFF (Fitness Functions de Arquitectura) con dep-cruiser'},
+        {s:'y',n:'SonarCloud Quality Gate ≥ 80%'},
+      ]},
+    ]},
+    {id:'nivel2', icon:'🏗️', label:'Pipeline Nivel 2 (~40 min)', passed:0, total:5, groups:[
+      {label:'p8 — BDD + Pact + k6 + Docker + SemVer', cases:[
+        {s:'y',n:'BDD (Desarrollo Guiado por Comportamiento) — 113 escenarios contra Postgres real'},
+        {s:'y',n:'Pact contract tests'},
+        {s:'y',n:'k6 performance smoke'},
+        {s:'y',n:'Docker image build + healthcheck'},
+        {s:'y',n:'SemVer tag en release'},
+      ]},
+    ]},
+  ]},
+  {id:'cd', label:'CD — Entrega Continua', cls:'tenv-cd', open:false, suites:[
+    {id:'deploy', icon:'🐳', label:'Deploy — Staging → Prod', passed:0, total:4, groups:[
+      {label:'pdeploy', cases:[
+        {s:'y',n:'E2E (pruebas de extremo a extremo) Playwright @smoke contra staging'},
+        {s:'y',n:'k6 — NFR (Requerimientos No Funcionales): latencia y tasa de error contra staging'},
+        {s:'y',n:'deploy a producción'},
+        {s:'y',n:'tag de release en git'},
+      ]},
+    ]},
+    {id:'regresion', icon:'🔁', label:'Regresión Total', passed:0, total:4, groups:[
+      {label:'preg — producción real', cases:[
+        {s:'y',n:'Playwright @smoke en producción'},
+        {s:'y',n:'Golden Dataset completo (22 casos)'},
+        {s:'y',n:'BDD (Desarrollo Guiado por Comportamiento) — suite completa RBAC contra producción'},
+        {s:'y',n:'evidencia archivada en Allure'},
+      ]},
+    ]},
+  ]},
+];
+
+function suiteStatusCls(s){ return s.passed===0?'by':s.passed<s.total?'br':'bg'; }
+function suiteBadgeTxt(s){ return s.passed===s.total?`${s.passed}/${s.total} ✓`:s.passed===0?'pendiente':`${s.passed}/${s.total}`; }
+function envBadge(env){
+  const total=env.suites.reduce((a,s)=>a+s.total,0);
+  const passed=env.suites.reduce((a,s)=>a+s.passed,0);
+  if(passed===total&&total>0) return {cls:'bg',txt:'✓ todos'};
+  if(passed===0) return {cls:'by',txt:'pendiente'};
+  return {cls:'by',txt:`${passed}/${total}`};
+}
+
+function renderTestPanel(){
+  const panel=document.getElementById('testPanel');
+  if(!panel) return;
+  const total=TESTS.flatMap(e=>e.suites).reduce((a,s)=>a+s.total,0);
+  const passed=TESTS.flatMap(e=>e.suites).reduce((a,s)=>a+s.passed,0);
+  panel.innerHTML=`
+    <div class="tpanel-hdr"><h2>🧩 Tests</h2><span class="tpanel-tots">${passed}/${total} casos</span></div>
+    ${TESTS.map(env=>{
+      const b=envBadge(env);
+      return `<div class="tenv ${env.cls}${env.open?' open':''}" id="tenv-${env.id}">
+        <div class="tenv-hdr" onclick="toggleEnv('${env.id}')">
+          <span>${env.label}</span><span class="tenv-badge ${b.cls}">${b.txt}</span><span style="font-size:9px">▾</span>
+        </div>
+        <div class="tenv-body">${env.suites.map(suite=>`
+          <div class="tsuite" id="tsuite-${suite.id}">
+            <div class="tsuite-hdr" onclick="toggleSuite('${suite.id}')">
+              <span>${suite.icon}</span>
+              <span class="tsuite-label">${suite.label}</span>
+              <span class="tenv-badge ${suiteStatusCls(suite)}">${suiteBadgeTxt(suite)}</span>
+              <span class="tchev">›</span>
+            </div>
+            <div class="tsuite-body">${suite.groups.map(g=>`
+              <div class="tgroup-lbl">${g.label}</div>
+              ${g.cases.map(c=>`<div class="tc ${c.s}"><span class="tcdot"></span><span>${c.n}</span></div>`).join('')}
+            `).join('')}</div>
+          </div>`).join('')}
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+
+function toggleEnv(id){
+  const el=document.getElementById('tenv-'+id);
+  if(el) el.classList.toggle('open');
+}
+
+function toggleSuite(id){
+  const el=document.getElementById('tsuite-'+id);
+  if(el) el.classList.toggle('open');
+}
+
 render();
+renderTestPanel();
 </script>
 </body>
 </html>

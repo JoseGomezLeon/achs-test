@@ -1,6 +1,6 @@
 # ADR-001: Piloto RBAC para PEC
 
-Estado: borrador
+Estado: Aceptada (condición satisfecha por ADR-011)
 
 ## Contexto
 
@@ -9,6 +9,8 @@ Se requiere una prueba de extremo a extremo del proceso de implementacion de PEC
 ## Problema
 
 Todavia no existe un ADR de negocio para RBAC. Sin esa definicion no corresponde construir reglas, casos ni automatizacion de dominio.
+
+**Resolución (2026-07-08):** ADR-011-rbac-dominio-negocio.md constituye ese ADR formal. Satisface las tres condiciones: define sistemas externos y stubs, matriz de capacidades y reglas de negocio, y reglas AFF. El circuito de implementación puede avanzar.
 
 ## Decision provisional
 
