@@ -25,7 +25,7 @@ export class StubIamAdapter implements IamAdapter {
   async authenticate(token: string): Promise<TokenClaims> {
     const claims = TokenClaimsFixture[token]
     if (!claims) {
-      throw new AuthenticationError("unknown_token", `Unknown stub token: '${token}'`)
+      throw new AuthenticationError('unknown_token', `Unknown stub token: '${token}'`)
     }
     return claims
   }
@@ -36,10 +36,10 @@ export class StubIamAdapter implements IamAdapter {
 
 Para pruebas de integracion se levanta un proveedor OIDC local compatible con discovery/JWKS. Opciones aceptadas:
 
-| Opcion | Uso recomendado |
-|---|---|
-| `mock-oauth2-server` | Docker Compose simple para CI/local |
-| `oidc-provider` | Simulacion mas completa de OIDC, JWKS y tokens firmados |
+| Opcion               | Uso recomendado                                         |
+| -------------------- | ------------------------------------------------------- |
+| `mock-oauth2-server` | Docker Compose simple para CI/local                     |
+| `oidc-provider`      | Simulacion mas completa de OIDC, JWKS y tokens firmados |
 
 El `OidcIamAdapter` no sabe si el issuer es Entra ID real o mock. Solo recibe configuracion:
 
@@ -53,13 +53,13 @@ OIDC_AUDIENCE=pec2-api
 
 Mapea un string plano a `TokenClaims` segun convenciones predefinidas. El camino completo sigue siendo `Claims -> Subject -> AccessContext`, igual que produccion.
 
-| Formato del token | Claims resultantes |
-|---|---|
-| `<rol>-<orgUnit>` | `oid`, `email`, `groups`, `extension_orgUnit` |
-| `job-<nombre>` | `appId`, `azp`, `roles`, `environment` |
-| `agent-afk-<ts>` | `appId`, `roles`, `operationScope`, `environment=dev` |
-| `agente-hitl-<op>` | `appId`, `roles`, `invokedBy` |
-| `externo-<tipo>` | `sub`, `externalType` |
+| Formato del token  | Claims resultantes                                    |
+| ------------------ | ----------------------------------------------------- |
+| `<rol>-<orgUnit>`  | `oid`, `email`, `groups`, `extension_orgUnit`         |
+| `job-<nombre>`     | `appId`, `azp`, `roles`, `environment`                |
+| `agent-afk-<ts>`   | `appId`, `roles`, `operationScope`, `environment=dev` |
+| `agente-hitl-<op>` | `appId`, `roles`, `invokedBy`                         |
+| `externo-<tipo>`   | `sub`, `externalType`                                 |
 
 ### 2.4. CapabilitySet en memoria
 
@@ -72,7 +72,7 @@ El stub **solo se activa** cuando `NODE_ENV !== 'production'` y `IAM_MODE=stub`.
 ```typescript
 // app/modules/rbac/domain/container.ts
 const iam: IamAdapter =
-  process.env.NODE_ENV !== "production" && process.env.IAM_MODE === "stub"
+  process.env.NODE_ENV !== 'production' && process.env.IAM_MODE === 'stub'
     ? new StubIamAdapter()
     : new OidcIamAdapter(oidcConfig)
 
@@ -81,10 +81,10 @@ export const container = { iam, authz: new AuthorizationServiceImpl(audit), audi
 
 ## Alternativas consideradas
 
-| Alternativa | Descartada porque |
-|---|---|
-| MSAL mock oficial | Acopla los tests a MSAL; el contrato que importa para RBAC son claims OIDC normalizados. |
-| Bypass directo (AllowAll) | Los tests del bypass no verifican la lógica real del mapeo de roles. Inseguro. |
+| Alternativa               | Descartada porque                                                                                      |
+| ------------------------- | ------------------------------------------------------------------------------------------------------ |
+| MSAL mock oficial         | Acopla los tests a MSAL; el contrato que importa para RBAC son claims OIDC normalizados.               |
+| Bypass directo (AllowAll) | Los tests del bypass no verifican la lógica real del mapeo de roles. Inseguro.                         |
 | Solo tokens planos en dev | Rapido para unit tests, pero no prueba discovery/JWKS ni validacion JWT. Se complementa con mock OIDC. |
 
 ## Consecuencias

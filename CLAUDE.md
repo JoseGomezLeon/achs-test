@@ -61,6 +61,7 @@ tests/
 ## Cómo retomar el circuito completo desde el principio
 
 Si en algún momento se quiere resetear y hacer el proceso completo de nuevo:
+
 1. Leer este CLAUDE.md
 2. Leer `docs/piloto-rbac-log.html` completo
 3. Leer `docs/adr/ADR-011-rbac-dominio-negocio.md` (entry point del dominio)

@@ -1,53 +1,53 @@
 # RBAC PEC2 — Design Handoff
 
-*Drilled down from `rbac_humano_agente.md`, `handoff_sesion_001.md`, `skeleton-rbac/README.md`, `skeleton-rbac/CONTEXT.md` and ADR-001..ADR-007. Every decision below is reconciled for implementation.*
+_Drilled down from `rbac_humano_agente.md`, `handoff_sesion_001.md`, `skeleton-rbac/README.md`, `skeleton-rbac/CONTEXT.md` and ADR-001..ADR-007. Every decision below is reconciled for implementation._
 
 ## Terminology
 
-| Term | Definition | Avoid |
-|---|---|---|
-| Subject | Authenticated actor attempting a protected action. | user as a generic term |
-| HumanSubject | Corporate human authenticated through Entra ID and mapped to one or more business roles (`businessRoles`, capabilities = union). | employee user |
-| AgentSubject | Non-human process authenticated with technical identity and registered in `AgentRegistry`. | service user |
-| ExternalSubject | External actor such as employer or integration identity outside corporate human IAM. | third-party user |
-| Capability | Domain verb that authorizes one action. | CRUD permission |
-| CapabilitySet | Effective set of capabilities for one execution. | token roles |
-| RelationContext | Resource boundary where capabilities apply. | permissions scope |
-| IamAdapter | Infrastructure adapter that validates OIDC/stub identity and returns normalized claims. | RBAC provider |
-| AgentRegistry | Versioned registry mapping Entra technical identity to logical agent, operation, environment and max capabilities. | dynamic permission lookup |
-| Worker | Runtime process that executes batch/async work using the shared engine. | agent engine |
-| Monthly Close | Liquidation close flow: operator requests, supervisor approves, batch job executes. | close-cycle single action |
+| Term            | Definition                                                                                                                       | Avoid                     |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| Subject         | Authenticated actor attempting a protected action.                                                                               | user as a generic term    |
+| HumanSubject    | Corporate human authenticated through Entra ID and mapped to one or more business roles (`businessRoles`, capabilities = union). | employee user             |
+| AgentSubject    | Non-human process authenticated with technical identity and registered in `AgentRegistry`.                                       | service user              |
+| ExternalSubject | External actor such as employer or integration identity outside corporate human IAM.                                             | third-party user          |
+| Capability      | Domain verb that authorizes one action.                                                                                          | CRUD permission           |
+| CapabilitySet   | Effective set of capabilities for one execution.                                                                                 | token roles               |
+| RelationContext | Resource boundary where capabilities apply.                                                                                      | permissions scope         |
+| IamAdapter      | Infrastructure adapter that validates OIDC/stub identity and returns normalized claims.                                          | RBAC provider             |
+| AgentRegistry   | Versioned registry mapping Entra technical identity to logical agent, operation, environment and max capabilities.               | dynamic permission lookup |
+| Worker          | Runtime process that executes batch/async work using the shared engine.                                                          | agent engine              |
+| Monthly Close   | Liquidation close flow: operator requests, supervisor approves, batch job executes.                                              | close-cycle single action |
 
 ## Decisions
 
-| # | Decision | Rationale | Scope |
-|---|---|---|---|
-| 1 | Entra ID is production IAM via OIDC. | ACHS corporate IAM is Entra; OIDC keeps integration standard. `@adonisjs/ally` is not used for Microsoft/Entra. | Human and agent authentication |
-| 2 | RBAC consumes normalized `TokenClaims`, not provider-specific objects. | Keeps domain authorization independent from Entra/MSAL/openid-client details. | `IamAdapter`, `AccessContextBuilder` |
-| 3 | Unit tests use `StubIamAdapter`; integration tests use mock OIDC. | Fast deterministic tests plus realistic discovery/JWKS validation. | Local dev, CI |
-| 4 | Human capabilities come from business role matrices. | Business roles are stable and auditable; capabilities stay versioned in code/docs. | UI/API human requests |
-| 5 | Agent capabilities are `token.roles ∩ AgentRegistry.allowedCapabilities`. | Entra proves identity and grants; local registry remains final authority. Unknown agents get no capabilities. | Batch jobs, AFK/HITL agents |
-| 6 | Workers live outside RBAC but share the same backend/monorepo and engine. | Avoids premature microservices while preserving separate runtime processes and identities. | `worker-pagos`, `worker-monitoreo`, `worker-outbox`, `worker-reportes` |
-| 7 | Monthly close uses double signature. | Prevents unilateral close and gives audit trail: request, approval, execution. | Liquidation close |
-| 8 | External employers get only purpose-built capabilities. | Avoids leaking prestation, liquidation or calculation details through generic read permissions. | ExternalSubject |
-| 9 | MCP is not a production authorization source. | MCP may help dev agents, but production auth must be Entra/gateway + RBAC. | Agent tooling |
-| 10 | Strict claim validation: missing mandatory claims (`orgUnit` for humans, `environment` for agents) fail with `ClaimsValidationError` → 401. No silent defaults. | A default like `?? "dev"` contradicts deny-by-default: malformed tokens would operate with an invented scope. | `AccessContextBuilder` |
-| 11 | Multi-group humans get the union of their role matrices; `businessRoles` records all roles. | Collapsing to a "highest privilege" role silently escalates and loses legitimate multi-role users. Anti-self-approval rules check `userId`, not role. | Human capability mapping |
-| 12 | `agentType`/`operation` come exclusively from `AgentRegistry`, never inferred from token roles or appId naming. | Name-based inference is fragile and token-role inference is caller-controlled. Unregistered agents authenticate but hold zero capabilities. | Agent subject construction |
-| 13 | Manual liquidation adjustments use double signature: Analista creates (`liquidacion:ajustar-manual`, stays `pendiente`), Supervisor approves (`liquidacion:aprobar-ajuste`). | RF-F4-05 requires `approved_by`; same anti-unilateral principle as monthly close. | Liquidation adjustments |
-| 14 | Mass IPC readjustment (CALC-MANT-001) uses double signature: `reajuste:solicitar` (Admin Gobernanza), `reajuste:aprobar` (Supervisor), `reajuste:ejecutar` (batch job). | It is the most massive mutation in the system and had no capability at all. | Governance |
-| 15 | Monthly close annulment exists with a hard limit: `liquidacion:solicitar-anulacion` (Supervisor), `liquidacion:aprobar-anulacion` (Admin Gobernanza), `liquidacion:ejecutar-anulacion` (job) — only while the bank file is NOT transmitted. See skeleton-pec ADR-011. | A wrongly executed close needs a governed emergency path, not improvisation. | Liquidation close |
-| 16 | Auditor sees masked RUT and clear amounts by default; `auditoria:leer-pii` exists but is assigned to no role until Compliance decides. See skeleton-pec ADR-013. | Closes the PII question with a safe operable default instead of blocking TS07. | Auditor role |
+| #   | Decision                                                                                                                                                                                                                                                              | Rationale                                                                                                                                             | Scope                                                                  |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| 1   | Entra ID is production IAM via OIDC.                                                                                                                                                                                                                                  | ACHS corporate IAM is Entra; OIDC keeps integration standard. `@adonisjs/ally` is not used for Microsoft/Entra.                                       | Human and agent authentication                                         |
+| 2   | RBAC consumes normalized `TokenClaims`, not provider-specific objects.                                                                                                                                                                                                | Keeps domain authorization independent from Entra/MSAL/openid-client details.                                                                         | `IamAdapter`, `AccessContextBuilder`                                   |
+| 3   | Unit tests use `StubIamAdapter`; integration tests use mock OIDC.                                                                                                                                                                                                     | Fast deterministic tests plus realistic discovery/JWKS validation.                                                                                    | Local dev, CI                                                          |
+| 4   | Human capabilities come from business role matrices.                                                                                                                                                                                                                  | Business roles are stable and auditable; capabilities stay versioned in code/docs.                                                                    | UI/API human requests                                                  |
+| 5   | Agent capabilities are `token.roles ∩ AgentRegistry.allowedCapabilities`.                                                                                                                                                                                             | Entra proves identity and grants; local registry remains final authority. Unknown agents get no capabilities.                                         | Batch jobs, AFK/HITL agents                                            |
+| 6   | Workers live outside RBAC but share the same backend/monorepo and engine.                                                                                                                                                                                             | Avoids premature microservices while preserving separate runtime processes and identities.                                                            | `worker-pagos`, `worker-monitoreo`, `worker-outbox`, `worker-reportes` |
+| 7   | Monthly close uses double signature.                                                                                                                                                                                                                                  | Prevents unilateral close and gives audit trail: request, approval, execution.                                                                        | Liquidation close                                                      |
+| 8   | External employers get only purpose-built capabilities.                                                                                                                                                                                                               | Avoids leaking prestation, liquidation or calculation details through generic read permissions.                                                       | ExternalSubject                                                        |
+| 9   | MCP is not a production authorization source.                                                                                                                                                                                                                         | MCP may help dev agents, but production auth must be Entra/gateway + RBAC.                                                                            | Agent tooling                                                          |
+| 10  | Strict claim validation: missing mandatory claims (`orgUnit` for humans, `environment` for agents) fail with `ClaimsValidationError` → 401. No silent defaults.                                                                                                       | A default like `?? "dev"` contradicts deny-by-default: malformed tokens would operate with an invented scope.                                         | `AccessContextBuilder`                                                 |
+| 11  | Multi-group humans get the union of their role matrices; `businessRoles` records all roles.                                                                                                                                                                           | Collapsing to a "highest privilege" role silently escalates and loses legitimate multi-role users. Anti-self-approval rules check `userId`, not role. | Human capability mapping                                               |
+| 12  | `agentType`/`operation` come exclusively from `AgentRegistry`, never inferred from token roles or appId naming.                                                                                                                                                       | Name-based inference is fragile and token-role inference is caller-controlled. Unregistered agents authenticate but hold zero capabilities.           | Agent subject construction                                             |
+| 13  | Manual liquidation adjustments use double signature: Analista creates (`liquidacion:ajustar-manual`, stays `pendiente`), Supervisor approves (`liquidacion:aprobar-ajuste`).                                                                                          | RF-F4-05 requires `approved_by`; same anti-unilateral principle as monthly close.                                                                     | Liquidation adjustments                                                |
+| 14  | Mass IPC readjustment (CALC-MANT-001) uses double signature: `reajuste:solicitar` (Admin Gobernanza), `reajuste:aprobar` (Supervisor), `reajuste:ejecutar` (batch job).                                                                                               | It is the most massive mutation in the system and had no capability at all.                                                                           | Governance                                                             |
+| 15  | Monthly close annulment exists with a hard limit: `liquidacion:solicitar-anulacion` (Supervisor), `liquidacion:aprobar-anulacion` (Admin Gobernanza), `liquidacion:ejecutar-anulacion` (job) — only while the bank file is NOT transmitted. See skeleton-pec ADR-011. | A wrongly executed close needs a governed emergency path, not improvisation.                                                                          | Liquidation close                                                      |
+| 16  | Auditor sees masked RUT and clear amounts by default; `auditoria:leer-pii` exists but is assigned to no role until Compliance decides. See skeleton-pec ADR-013.                                                                                                      | Closes the PII question with a safe operable default instead of blocking TS07.                                                                        | Auditor role                                                           |
 
 ## Contracts
 
 ### Endpoints
 
-| Method | Path | Request | Response | Errors | Notes |
-|---|---|---|---|---|---|
-| `GET` | protected routes | `Authorization: Bearer <token>` | Controller receives `HttpContext.accessContext` | `401` missing/invalid token | Middleware contract, route-specific paths live in engine |
-| `POST` | protected commands | JSON command + bearer token | Domain result or typed error mapped to HTTP | `403` `AccessDeniedError`, `403` `RelationViolationError` | Controllers must provide `AccessContext` as Effect Layer |
-| `POST` | worker entrypoint/CLI internal | technical token/client credentials | job result + audit/outbox | auth failures, deny-by-default | Exact CLI names live in worker package |
+| Method | Path                           | Request                            | Response                                        | Errors                                                    | Notes                                                    |
+| ------ | ------------------------------ | ---------------------------------- | ----------------------------------------------- | --------------------------------------------------------- | -------------------------------------------------------- |
+| `GET`  | protected routes               | `Authorization: Bearer <token>`    | Controller receives `HttpContext.accessContext` | `401` missing/invalid token                               | Middleware contract, route-specific paths live in engine |
+| `POST` | protected commands             | JSON command + bearer token        | Domain result or typed error mapped to HTTP     | `403` `AccessDeniedError`, `403` `RelationViolationError` | Controllers must provide `AccessContext` as Effect Layer |
+| `POST` | worker entrypoint/CLI internal | technical token/client credentials | job result + audit/outbox                       | auth failures, deny-by-default                            | Exact CLI names live in worker package                   |
 
 ### Data model
 
@@ -80,15 +80,15 @@
 
 ## Boundaries
 
-| Module | Owns | Depends on | Never touches |
-|---|---|---|---|
-| `IamAdapter` | Token validation and normalized claims | OIDC issuer/JWKS or stub fixtures | Domain capability decisions |
-| `AccessContextBuilder` | Claims to subject, capabilities and relations | Role maps, `AgentRegistry` | Network calls |
-| `AuthorizationService` | `require` and `requireRelation` checks | `AccessContext` | Authentication, job execution |
-| `AgentRegistry` | Technical identity to logical agent mapping | Versioned config/code | Runtime scheduling |
-| Workers | Running batch/async processes | Engine, RBAC, IAM credentials | Defining RBAC policy |
-| Engine | Business use-cases and persistence | RBAC Layer, framework resolver, DB | Provider-specific auth logic |
-| Gateway | API key perimeter for externals | External credential store | Domain authorization |
+| Module                 | Owns                                          | Depends on                         | Never touches                 |
+| ---------------------- | --------------------------------------------- | ---------------------------------- | ----------------------------- |
+| `IamAdapter`           | Token validation and normalized claims        | OIDC issuer/JWKS or stub fixtures  | Domain capability decisions   |
+| `AccessContextBuilder` | Claims to subject, capabilities and relations | Role maps, `AgentRegistry`         | Network calls                 |
+| `AuthorizationService` | `require` and `requireRelation` checks        | `AccessContext`                    | Authentication, job execution |
+| `AgentRegistry`        | Technical identity to logical agent mapping   | Versioned config/code              | Runtime scheduling            |
+| Workers                | Running batch/async processes                 | Engine, RBAC, IAM credentials      | Defining RBAC policy          |
+| Engine                 | Business use-cases and persistence            | RBAC Layer, framework resolver, DB | Provider-specific auth logic  |
+| Gateway                | API key perimeter for externals               | External credential store          | Domain authorization          |
 
 ## Verification plan
 
@@ -112,12 +112,12 @@
 
 ## Deferred
 
-| Item | Why deferred | Who decides | By when |
-|---|---|---|---|
-| Assignment of `auditoria:leer-pii` (unmasking) | Safe default already decided (masked RUT + clear amounts, skeleton-pec ADR-013); only the *grant* of unmasking remains a compliance call. Does not block TS07. | Compliance / Legal | Before exposing Auditor UI |
-| Exact Entra `orgUnit` claim source | Depends on tenant schema/extensions. | IT / Seguridad ACHS | Before real Entra integration |
-| External employer portal phase | Capabilities are defined, but business/legal must confirm whether direct portal access is in scope. | Negocio / Legal | Before implementing `ExternalSubject` endpoints |
-| Monthly close phase gate | Rule is defined; whether it starts Fase 2 or Fase 3 remains planning. | Negocio / PO | Before Fase 2 planning |
+| Item                                           | Why deferred                                                                                                                                                   | Who decides         | By when                                         |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | ----------------------------------------------- |
+| Assignment of `auditoria:leer-pii` (unmasking) | Safe default already decided (masked RUT + clear amounts, skeleton-pec ADR-013); only the _grant_ of unmasking remains a compliance call. Does not block TS07. | Compliance / Legal  | Before exposing Auditor UI                      |
+| Exact Entra `orgUnit` claim source             | Depends on tenant schema/extensions.                                                                                                                           | IT / Seguridad ACHS | Before real Entra integration                   |
+| External employer portal phase                 | Capabilities are defined, but business/legal must confirm whether direct portal access is in scope.                                                            | Negocio / Legal     | Before implementing `ExternalSubject` endpoints |
+| Monthly close phase gate                       | Rule is defined; whether it starts Fase 2 or Fase 3 remains planning.                                                                                          | Negocio / PO        | Before Fase 2 planning                          |
 
 ## Implementation notes
 

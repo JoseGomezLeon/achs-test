@@ -14,10 +14,10 @@ Con la decisión API-first (ADR-010), el backend expone dos superficies con comp
 
 Se implementan **dos middlewares de AdonisJS**, uno por superficie, registrados en `start/kernel.ts`:
 
-| Middleware | Rutas | Credencial | Falla de auth |
-|---|---|---|---|
-| `RbacApiAuthMiddleware` (`middleware.rbacApiAuth()`) | `/api/*` | `Bearer` (gana) con fallback a sesión | **401 JSON** `{ code: 'unauthenticated', message }` — nunca redirect |
-| `RbacWebAuthMiddleware` (`middleware.rbacWebAuth()`) | rutas web `/rbac/*` | Solo sesión (`rbac.token`) | Redirect a `/auth/rbac-login` + flash |
+| Middleware                                           | Rutas               | Credencial                            | Falla de auth                                                        |
+| ---------------------------------------------------- | ------------------- | ------------------------------------- | -------------------------------------------------------------------- |
+| `RbacApiAuthMiddleware` (`middleware.rbacApiAuth()`) | `/api/*`            | `Bearer` (gana) con fallback a sesión | **401 JSON** `{ code: 'unauthenticated', message }` — nunca redirect |
+| `RbacWebAuthMiddleware` (`middleware.rbacWebAuth()`) | rutas web `/rbac/*` | Solo sesión (`rbac.token`)            | Redirect a `/auth/rbac-login` + flash                                |
 
 Ambos ejecutan el mismo pipeline:
 
@@ -91,11 +91,11 @@ El middleware web (`rbac_web_auth_middleware.ts`) es el mismo pipeline con crede
 
 Los controllers **no** capturan errores de autorización. `HttpExceptionHandler` (`app/exceptions/handler.ts`) hace el mapeo en un solo lugar, discriminando por prefijo de ruta:
 
-| Error de dominio | `/api/*` | Web |
-|---|---|---|
-| `AccessDeniedError` | 403 `{ code: 'access_denied', message, capability }` | 403 página Inertia `errors/forbidden` |
-| `RelationViolationError` | 403 `{ code: 'relation_violation', message, capability, resourceId }` | 403 página Inertia `errors/forbidden` |
-| `AuthenticationError` / `ClaimsValidationError` | 401 `{ code: 'unauthenticated', message }` | Redirect a `/auth/rbac-login` |
+| Error de dominio                                | `/api/*`                                                              | Web                                   |
+| ----------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------- |
+| `AccessDeniedError`                             | 403 `{ code: 'access_denied', message, capability }`                  | 403 página Inertia `errors/forbidden` |
+| `RelationViolationError`                        | 403 `{ code: 'relation_violation', message, capability, resourceId }` | 403 página Inertia `errors/forbidden` |
+| `AuthenticationError` / `ClaimsValidationError` | 401 `{ code: 'unauthenticated', message }`                            | Redirect a `/auth/rbac-login`         |
 
 Los códigos (`unauthenticated`, `access_denied`, `relation_violation`) son parte del contrato público de la API: los consumidores automatizados deciden por `code`, no parseando `message`.
 
@@ -149,13 +149,13 @@ El contrato de superficies está fijado por tests funcionales (`tests/functional
 
 ## Alternativas consideradas
 
-| Alternativa | Descartada porque |
-|---|---|
+| Alternativa                                               | Descartada porque                                                                                           |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | Un middleware único que negocia JSON/redirect por request | Menos claro que un middleware por superficie; la tabla de rutas deja explícito qué contrato de error aplica |
-| Negociar por header `Accept` en lugar de prefijo de ruta | Los agentes no siempre envían `Accept` correcto; el prefijo es determinístico y auditable |
-| try/catch de errores de dominio en cada controller | Duplicación en cada endpoint; el exception handler es el punto único de mapeo |
-| Usar el sistema de guards de AdonisJS | Los guards son para rutas; la autorización por capacidad es más granular (a nivel de use-case, no de ruta) |
-| AccessContext en estado global/singleton por request | Rompe la inmutabilidad y el aislamiento; cada request tiene su propio AccessContext explícito |
+| Negociar por header `Accept` en lugar de prefijo de ruta  | Los agentes no siempre envían `Accept` correcto; el prefijo es determinístico y auditable                   |
+| try/catch de errores de dominio en cada controller        | Duplicación en cada endpoint; el exception handler es el punto único de mapeo                               |
+| Usar el sistema de guards de AdonisJS                     | Los guards son para rutas; la autorización por capacidad es más granular (a nivel de use-case, no de ruta)  |
+| AccessContext en estado global/singleton por request      | Rompe la inmutabilidad y el aislamiento; cada request tiene su propio AccessContext explícito               |
 
 ## Consecuencias
 

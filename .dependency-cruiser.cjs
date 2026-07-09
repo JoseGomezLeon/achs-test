@@ -11,7 +11,6 @@
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
-
     // ── Reglas globales ────────────────────────────────────────────────────────
 
     {
@@ -125,7 +124,6 @@ module.exports = {
       from: { path: '^app/modules/rbac/app/middleware' },
       to: { path: '^app/modules/rbac/domain/(authorization|audit|registry)' },
     },
-
   ],
 
   options: {

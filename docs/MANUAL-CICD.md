@@ -15,10 +15,10 @@
 5. [Pre-Run — Documentación y contratos](#5-pre-run--documentación-y-contratos)
 6. [Infraestructura de tests](#6-infraestructura-de-tests)
 7. [Ciclo TDD — I1 a I6 + Allure](#7-ciclo-tdd--i1-a-i6)
-8. [Pipeline CI — Nivel 1](#8-pipeline-ci--nivel-1)  ← pendiente
-9. [Pipeline CI — Nivel 2](#9-pipeline-ci--nivel-2)  ← pendiente
-10. [Deploy — Staging → Producción](#10-deploy--staging--producción)  ← pendiente
-11. [Regresión Total](#11-regresión-total)  ← pendiente
+8. [Pipeline CI — Nivel 1](#8-pipeline-ci--nivel-1) ← pendiente
+9. [Pipeline CI — Nivel 2](#9-pipeline-ci--nivel-2) ← pendiente
+10. [Deploy — Staging → Producción](#10-deploy--staging--producción) ← pendiente
+11. [Regresión Total](#11-regresión-total) ← pendiente
 
 ---
 
@@ -32,6 +32,7 @@ npm -v
 ```
 
 Si no está instalado:
+
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs
@@ -60,6 +61,7 @@ google-chrome --version   # /usr/bin/google-chrome
 ```
 
 Si no está instalado (Ubuntu — usar apt, NO snap):
+
 ```bash
 wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
 echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
@@ -101,11 +103,13 @@ sudo apt update && sudo apt install gh -y
 ```
 
 Autenticación (usar `--web` para evitar el menú interactivo de flechas):
+
 ```bash
 gh auth login --web
 ```
 
 > **Alternativa Azure DevOps**: instalar `az` CLI y la extensión devops:
+>
 > ```bash
 > curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 > az extension add --name azure-devops
@@ -130,17 +134,20 @@ git checkout -b main
 ### 2.2 Crear el repositorio remoto y conectarlo
 
 **GitHub:**
+
 ```bash
 gh repo create <project-name> --private --source=. --remote=origin
 ```
 
 Si el repositorio ya existe en GitHub:
+
 ```bash
 git remote add origin https://github.com/<org>/<repo>.git
 git fetch origin
 ```
 
 > **Alternativa Azure DevOps:**
+>
 > ```bash
 > az repos create --name <project-name>
 > git remote add origin https://<org>@dev.azure.com/<org>/<project>/_git/<project-name>
@@ -223,6 +230,7 @@ allure --version   # requiere Java instalado
 ### 4.3 Playwright apuntando a Chrome del sistema
 
 En `playwright.config.ts`:
+
 ```typescript
 use: {
   executablePath: '/usr/bin/google-chrome',
@@ -230,6 +238,7 @@ use: {
 ```
 
 Verificar:
+
 ```bash
 npx playwright test --list
 ```
@@ -240,13 +249,13 @@ npx playwright test --list
 
 Antes de escribir código de producción, estos artefactos deben existir y estar aprobados:
 
-| Artefacto | Responsable | Ubicación |
-|-----------|-------------|-----------|
-| ADR del módulo (estado: Aceptado) | Arquitecto | `docs/adr/ADR-XXX-<module>.md` |
-| Golden Dataset (casos canónicos) | Analista/QA | `docs/golden/` |
-| Interfaces de sistemas externos | Dev | `app/modules/<module>/domain/` |
-| Stubs de sistemas externos | Dev | `tests/stubs/` |
-| Archivos `.feature` (Gherkin) | Analista/PO | `tests/bdd/features/` |
+| Artefacto                         | Responsable | Ubicación                      |
+| --------------------------------- | ----------- | ------------------------------ |
+| ADR del módulo (estado: Aceptado) | Arquitecto  | `docs/adr/ADR-XXX-<module>.md` |
+| Golden Dataset (casos canónicos)  | Analista/QA | `docs/golden/`                 |
+| Interfaces de sistemas externos   | Dev         | `app/modules/<module>/domain/` |
+| Stubs de sistemas externos        | Dev         | `tests/stubs/`                 |
+| Archivos `.feature` (Gherkin)     | Analista/PO | `tests/bdd/features/`          |
 
 > **Regla**: los `.feature` los escribe el Analista/PO, no el desarrollador. Son el contrato de comportamiento.
 
@@ -257,6 +266,7 @@ Antes de escribir código de producción, estos artefactos deben existir y estar
 ### 6.1 Variables de entorno para tests
 
 Crear `tests/bootstrap.ts` y `.env.test`:
+
 ```bash
 # .env.test
 DB_CONNECTION=sqlite
@@ -293,6 +303,7 @@ bash scripts/dev-tdd.sh
 ```
 
 El script corre:
+
 - Baseline (estado verde antes de tocar nada)
 - AFF watcher (detecta violaciones de arquitectura al guardar)
 - Japa watcher (re-ejecuta suite unit al guardar)
@@ -357,6 +368,7 @@ node --import tsx/esm ./node_modules/.bin/cucumber-js \
 ### 7.5 I5 — Pre-commit Gate
 
 Crear `.git/hooks/pre-commit` (ejecutable) con los checks:
+
 1. Gitleaks (si está instalado) — detecta secrets
 2. dep-cruiser AFF — 0 violaciones
 3. Suite unit completa — todos en verde
@@ -371,12 +383,14 @@ git commit -m "feat(<module>): <descripción>"
 ### 7.6 I6 — PR
 
 **Caso normal** (el repo local tiene el mismo historial que el remoto):
+
 ```bash
 git push -u origin feature/<feature-name>
 gh pr create --title "feat(<module>): <descripción>" --base main
 ```
 
 **Caso: historias no relacionadas** (repo local creado con `git init` independiente del remoto):
+
 ```bash
 # Crear rama basada en main del remoto
 git fetch origin
@@ -396,6 +410,7 @@ gh pr create --title "feat(<module>): <descripción>" --base main
 ```
 
 > **Alternativa Azure DevOps** para crear la PR:
+>
 > ```bash
 > az repos pr create \
 >   --repository <repo-name> \
@@ -417,7 +432,7 @@ export default {
   default: {
     format: ['progress-bar', 'allure-cucumberjs/reporter'],
     // ...otros campos
-  }
+  },
 }
 ```
 
@@ -467,6 +482,7 @@ Trigger: PR hacia `main`.
 Duración estimada: ~10 minutos.
 
 Pasos:
+
 1. lint + typecheck
 2. Unit tests @smoke (SQLite in-memory, sin Docker)
 3. AFF (dep-cruiser)
@@ -482,6 +498,7 @@ Trigger: release o schedule nightly.
 Duración estimada: ~40 minutos.
 
 Pasos:
+
 1. BDD completo contra Postgres (Testcontainers)
 2. Pact contract tests
 3. k6 performance smoke
@@ -504,16 +521,16 @@ Pasos:
 
 ## Apéndice — Problemas conocidos y soluciones
 
-| Problema | Causa | Solución |
-|----------|-------|----------|
-| `node ace` falla con `Unknown file extension .ts` | `@poppinss/ts-exec` incompatible con Node v22 | Usar `npx tsx ace` en todos los scripts |
-| Watcher no muestra tests en rojo | `UNIT_FILES` se calcula una sola vez al arrancar | Recomputar `UNIT_FILES` en cada iteración del loop |
-| `ERR_MODULE_NOT_FOUND` mata Japa sin mostrar `✘` | El spec importa un módulo que no existe aún | Crear el archivo de implementación vacío ANTES que el spec |
-| `chokidar-cli` segfault inmediato | Incompatibilidad con la versión de Node/libc | Reemplazar con loop `while true; do sleep 2; done` |
-| `depcruise --watch` desconocido | dep-cruiser v18 no soporta `--watch` | Reemplazar con loop de polling usando `find ... -newer /tmp/.tdd-marker` |
-| `gh pr create` falla con "no history in common" | Repo local creado con `git init` independiente del remoto | Crear rama desde `origin/main` y fusionar con `--allow-unrelated-histories` |
-| `gh auth login` interactivo no funciona en terminal no-TTY | El menú de flechas requiere TTY | Usar `gh auth login --web` en terminal del sistema |
-| Vite dep-scan errors inundan la salida del watcher | Vite escanea dependencias al arrancar | Redirigir stderr: `2>/dev/null` en el comando del watcher |
-| `k6` falla al instalar via `apt` | `gpg --keyserver` bloqueado en redes corporativas | Usar `sudo snap install k6` |
-| `allure-cucumberjs` no genera archivos en `allure-results/` | Existe un archivo (no directorio) llamado `allure-results` que bloquea el `mkdirSync` | `rm allure-results` antes de correr cucumber |
+| Problema                                                        | Causa                                                                                                                          | Solución                                                                               |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| `node ace` falla con `Unknown file extension .ts`               | `@poppinss/ts-exec` incompatible con Node v22                                                                                  | Usar `npx tsx ace` en todos los scripts                                                |
+| Watcher no muestra tests en rojo                                | `UNIT_FILES` se calcula una sola vez al arrancar                                                                               | Recomputar `UNIT_FILES` en cada iteración del loop                                     |
+| `ERR_MODULE_NOT_FOUND` mata Japa sin mostrar `✘`                | El spec importa un módulo que no existe aún                                                                                    | Crear el archivo de implementación vacío ANTES que el spec                             |
+| `chokidar-cli` segfault inmediato                               | Incompatibilidad con la versión de Node/libc                                                                                   | Reemplazar con loop `while true; do sleep 2; done`                                     |
+| `depcruise --watch` desconocido                                 | dep-cruiser v18 no soporta `--watch`                                                                                           | Reemplazar con loop de polling usando `find ... -newer /tmp/.tdd-marker`               |
+| `gh pr create` falla con "no history in common"                 | Repo local creado con `git init` independiente del remoto                                                                      | Crear rama desde `origin/main` y fusionar con `--allow-unrelated-histories`            |
+| `gh auth login` interactivo no funciona en terminal no-TTY      | El menú de flechas requiere TTY                                                                                                | Usar `gh auth login --web` en terminal del sistema                                     |
+| Vite dep-scan errors inundan la salida del watcher              | Vite escanea dependencias al arrancar                                                                                          | Redirigir stderr: `2>/dev/null` en el comando del watcher                              |
+| `k6` falla al instalar via `apt`                                | `gpg --keyserver` bloqueado en redes corporativas                                                                              | Usar `sudo snap install k6`                                                            |
+| `allure-cucumberjs` no genera archivos en `allure-results/`     | Existe un archivo (no directorio) llamado `allure-results` que bloquea el `mkdirSync`                                          | `rm allure-results` antes de correr cucumber                                           |
 | `allure-cucumberjs` genera 0 archivos aunque el run fue exitoso | Se usó `--format summary` junto con `--format allure-cucumberjs/reporter` — el proceso termina antes que los writes asíncronos | Nunca combinar `--format summary` con `allure-cucumberjs/reporter` en el mismo comando |

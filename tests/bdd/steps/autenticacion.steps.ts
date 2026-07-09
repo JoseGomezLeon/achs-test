@@ -57,12 +57,19 @@ Then('el resultado es un error con código {string}', function (this: RbacWorld,
     return
   }
   // access_denied / relation_violation viven en lastDenialCode
-  assert.equal(this.lastDenialCode, code, `se esperaba código "${code}", se obtuvo: ${this.lastDenialCode}`)
+  assert.equal(
+    this.lastDenialCode,
+    code,
+    `se esperaba código "${code}", se obtuvo: ${this.lastDenialCode}`
+  )
 })
 
 Then('el código HTTP asociado es {int}', function (this: RbacWorld, httpCode: number) {
   if (httpCode === 401) {
-    assert.ok(this.lastError instanceof AuthenticationError, 'se esperaba AuthenticationError para 401')
+    assert.ok(
+      this.lastError instanceof AuthenticationError,
+      'se esperaba AuthenticationError para 401'
+    )
   } else if (httpCode === 403) {
     assert.ok(
       this.lastDenialCode === 'access_denied' || this.lastDenialCode === 'relation_violation',
@@ -71,27 +78,36 @@ Then('el código HTTP asociado es {int}', function (this: RbacWorld, httpCode: n
   }
 })
 
-Then('el mensaje de error no contiene detalles de la capacidad interna', function (this: RbacWorld) {
-  // La política es que el mensaje sea genérico — el stub devuelve un mensaje simple
-  assert.ok(this.lastError === null || !(this.lastError?.message ?? '').includes('liquidacion:ejecutar-cierre'))
-})
+Then(
+  'el mensaje de error no contiene detalles de la capacidad interna',
+  function (this: RbacWorld) {
+    // La política es que el mensaje sea genérico — el stub devuelve un mensaje simple
+    assert.ok(
+      this.lastError === null ||
+        !(this.lastError?.message ?? '').includes('liquidacion:ejecutar-cierre')
+    )
+  }
+)
 
 Then('no se genera registro de auditoría de capacidad', function (this: RbacWorld) {
   assert.equal(this.auditWriter.entries.length, 0)
 })
 
-Then('queda registro de auditoría con outcome {string}', function (this: RbacWorld, outcome: string) {
-  const entries = this.getAuditEntries()
-  assert.ok(
-    entries.some(e => e.outcome === outcome),
-    `no se encontró entrada con outcome="${outcome}". Encontrados: ${entries.map(e => e.outcome)}`
-  )
-})
+Then(
+  'queda registro de auditoría con outcome {string}',
+  function (this: RbacWorld, outcome: string) {
+    const entries = this.getAuditEntries()
+    assert.ok(
+      entries.some((e) => e.outcome === outcome),
+      `no se encontró entrada con outcome="${outcome}". Encontrados: ${entries.map((e) => e.outcome)}`
+    )
+  }
+)
 
 Then('el registro incluye el campo {string}', function (this: RbacWorld, field: string) {
   const entries = this.getAuditEntries()
   assert.ok(
-    entries.some(e => (e as any)[field] !== undefined),
+    entries.some((e) => (e as any)[field] !== undefined),
     `no se encontró entrada con el campo "${field}"`
   )
 })

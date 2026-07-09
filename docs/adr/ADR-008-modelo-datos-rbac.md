@@ -30,12 +30,12 @@ El `AgentRegistry` también queda en código/config versionado para F0-F1. Puede
 
 El anteproyecto contiene documentos de datos y auditoría previos a este skeleton. Este ADR los aterriza para RBAC:
 
-| Fuente | Decisión para `skeleton-rbac` |
-|---|---|
-| `../3_especificacion_tecnica/eventos-auditoria/02_app_audit_cdc.md` propone `app_audit_log` genérico | Se adopta `app_audit` como nombre canónico del skeleton, con columnas explícitas de autorización (`capability`, `resource_type`, `resource_id`, `outcome`, `denial_reason`, `request_id`). |
-| `../3_especificacion_tecnica/datos/01_soft_deletes.md` clasifica entidades por soft delete, vigencia o inmutabilidad | `app_audit` cae en la categoría inmutable/append-only: no soft delete, no update, no delete. |
-| `../1_dominio/04_Modelo_de_Entidades.md` define entidades de dominio como `Persona`, `PrestacionEconomica`, `LiquidacionDePago` y `ExpedienteDeTramite` | RBAC no duplica esas tablas. `app_audit.resource_type/resource_id` referencia esos agregados por ID interno cuando corresponda. |
-| `../pec_mvp/database/migrations/*create_users_table.ts` contiene una tabla `users` de scaffold Adonis | No es fuente de roles ni permisos para RBAC. Puede sobrevivir como tabla de sesión/app local si el frontend lo requiere, pero la identidad y roles productivos vienen de Entra ID. |
+| Fuente                                                                                                                                                  | Decisión para `skeleton-rbac`                                                                                                                                                              |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `../3_especificacion_tecnica/eventos-auditoria/02_app_audit_cdc.md` propone `app_audit_log` genérico                                                    | Se adopta `app_audit` como nombre canónico del skeleton, con columnas explícitas de autorización (`capability`, `resource_type`, `resource_id`, `outcome`, `denial_reason`, `request_id`). |
+| `../3_especificacion_tecnica/datos/01_soft_deletes.md` clasifica entidades por soft delete, vigencia o inmutabilidad                                    | `app_audit` cae en la categoría inmutable/append-only: no soft delete, no update, no delete.                                                                                               |
+| `../1_dominio/04_Modelo_de_Entidades.md` define entidades de dominio como `Persona`, `PrestacionEconomica`, `LiquidacionDePago` y `ExpedienteDeTramite` | RBAC no duplica esas tablas. `app_audit.resource_type/resource_id` referencia esos agregados por ID interno cuando corresponda.                                                            |
+| `../pec_mvp/database/migrations/*create_users_table.ts` contiene una tabla `users` de scaffold Adonis                                                   | No es fuente de roles ni permisos para RBAC. Puede sobrevivir como tabla de sesión/app local si el frontend lo requiere, pero la identidad y roles productivos vienen de Entra ID.         |
 
 ## Esquema
 
@@ -194,23 +194,23 @@ create index monthly_close_request_id_idx
 
 ## Tablas excluidas del modelo F0-F1
 
-| Tabla | Motivo de exclusión |
-|---|---|
-| `users` | La identidad humana pertenece a Entra ID. RBAC consume claims normalizados, no administra usuarios. |
-| `roles` | Los roles de negocio son tipos/matriz versionados; no son registros administrables en F0-F1. |
-| `permissions` | Las capacidades son literales de dominio versionados en `@achs/pec-contracts/auth`. |
-| `user_roles` | La asignación humana se hace en grupos de Entra ID. |
+| Tabla              | Motivo de exclusión                                                                                   |
+| ------------------ | ----------------------------------------------------------------------------------------------------- |
+| `users`            | La identidad humana pertenece a Entra ID. RBAC consume claims normalizados, no administra usuarios.   |
+| `roles`            | Los roles de negocio son tipos/matriz versionados; no son registros administrables en F0-F1.          |
+| `permissions`      | Las capacidades son literales de dominio versionados en `@achs/pec-contracts/auth`.                   |
+| `user_roles`       | La asignación humana se hace en grupos de Entra ID.                                                   |
 | `role_permissions` | La matriz `BusinessRole -> CapabilitySet` vive en código para mantener review y trazabilidad por git. |
-| `agent_registry` | Diferido. Para F0-F1 vive en código/config versionado por ADR-005 y ADR-006. |
+| `agent_registry`   | Diferido. Para F0-F1 vive en código/config versionado por ADR-005 y ADR-006.                          |
 
 ## Alternativas consideradas
 
-| Alternativa | Descartada porque |
-|---|---|
-| RBAC completo en BD (`users`, `roles`, `permissions`) | Duplica Entra ID, agrega administración local de permisos y contradice ADR-005. |
-| Guardar `AgentRegistry` en BD desde el inicio | Permite cambios dinámicos, pero agrega UI/proceso de gobierno que no existe en F0-F1. |
-| Usar solo logs estructurados para auditoría | Los logs no son el system-of-record y no cumplen el requisito de evidencia transaccional insert-only. |
-| Guardar auditoría en `outbox_events` | Mezcla integración de eventos de dominio con auditoría de seguridad; además las denegaciones no son eventos de dominio. |
+| Alternativa                                           | Descartada porque                                                                                                       |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| RBAC completo en BD (`users`, `roles`, `permissions`) | Duplica Entra ID, agrega administración local de permisos y contradice ADR-005.                                         |
+| Guardar `AgentRegistry` en BD desde el inicio         | Permite cambios dinámicos, pero agrega UI/proceso de gobierno que no existe en F0-F1.                                   |
+| Usar solo logs estructurados para auditoría           | Los logs no son el system-of-record y no cumplen el requisito de evidencia transaccional insert-only.                   |
+| Guardar auditoría en `outbox_events`                  | Mezcla integración de eventos de dominio con auditoría de seguridad; además las denegaciones no son eventos de dominio. |
 
 ## Consecuencias
 

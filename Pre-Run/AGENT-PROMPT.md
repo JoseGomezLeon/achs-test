@@ -31,12 +31,14 @@ Lee estos archivos en este orden antes de hacer nada:
 En este orden:
 
 **Wave 1 — sin dependencias entre sí (crear en paralelo):**
+
 - ADR síntesis (si no está listo, completar la plantilla en `Pre-Run/dominio/`)
 - `.env.test` con `TEST_MODE=architecture` y `DB_CONNECTION=sqlite`
 - `docker-compose.test.yml` con Pact Broker, Toxiproxy y base de datos
 - `tests/chaos/toxiproxy.config.json`
 
 **Wave 2 — depende del ADR:**
+
 - Interfaces TypeScript de sistemas externos (`domain/iam/`, `domain/audit/`)
 - Tipos de dominio (`TokenClaims`, `AuditEntry`)
 - Mapa de capacidades (`domain/access-context/capability-map.ts`)
@@ -46,6 +48,7 @@ En este orden:
 - `scripts/dev-tdd.sh` (watcher AFF + tests en paralelo)
 
 **Wave 3 — depende de interfaces y stubs:**
+
 - 7 feature files Gherkin (1 por área de negocio del ADR)
 - Primer test unitario que verifica el mapa de capacidades
 - `playwright.config.ts` con `webServer` apuntando al servidor
@@ -54,6 +57,7 @@ En este orden:
 - 5 archivos de step definitions en `tests/bdd/steps/`
 
 **Wave 4 — verificación:**
+
 - `npx tsc --noEmit` → 0 errores en archivos nuevos
 - `npx depcruise --config .dependency-cruiser.cjs app/modules` → 0 violaciones
 - Tests unitarios → todos passed

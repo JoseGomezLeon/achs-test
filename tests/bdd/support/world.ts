@@ -5,7 +5,7 @@ import type { TokenClaims } from '../../../app/modules/rbac/domain/iam/token-cla
 import { AuthenticationError } from '../../../app/modules/rbac/domain/iam/iam-adapter.js'
 import {
   AccessContextBuilder,
-  AccessContext,
+  type AccessContext,
   ENTRA_GROUP_TO_ROLE,
 } from '../../../app/modules/rbac/domain/access-context/access-context-builder.js'
 import type { BusinessRole } from '../../../app/modules/rbac/domain/access-context/capability-map.js'
@@ -65,7 +65,11 @@ export class RbacWorld extends World {
     const granted = this.subject.capabilities.has(capability)
     this.lastAccessResult = granted ? 'granted' : 'denied'
     this.lastDenialCode = granted ? null : 'access_denied'
-    this.#writeAudit(capability, granted ? 'granted' : 'denied', granted ? undefined : 'access_denied')
+    this.#writeAudit(
+      capability,
+      granted ? 'granted' : 'denied',
+      granted ? undefined : 'access_denied'
+    )
   }
 
   checkCapabilityForResource(capability: string, resourceId: string): void {
@@ -127,17 +131,24 @@ export class RbacWorld extends World {
 
   checkExecuteClose(period: string): void {
     if (!this.subject) {
-      this.lastAccessResult = 'denied'; this.lastDenialCode = 'unauthenticated'; return
+      this.lastAccessResult = 'denied'
+      this.lastDenialCode = 'unauthenticated'
+      return
     }
     const hasCapability = this.subject.capabilities.has('liquidacion:ejecutar-cierre')
     if (!hasCapability) {
-      this.lastAccessResult = 'denied'; this.lastDenialCode = 'access_denied'; return
+      this.lastAccessResult = 'denied'
+      this.lastDenialCode = 'access_denied'
+      return
     }
     const state = this.closeStates.get(period)
     if (!state?.approvedBy) {
-      this.lastAccessResult = 'denied'; this.lastDenialCode = 'access_denied'; return
+      this.lastAccessResult = 'denied'
+      this.lastDenialCode = 'access_denied'
+      return
     }
-    this.lastAccessResult = 'granted'; this.lastDenialCode = null
+    this.lastAccessResult = 'granted'
+    this.lastDenialCode = null
     this.#writeAudit('liquidacion:ejecutar-cierre', 'granted')
   }
 
@@ -165,7 +176,12 @@ export class RbacWorld extends World {
 
   #writeAudit(capability: string, outcome: 'granted' | 'denied', denialReason?: string): void {
     void this.auditWriter.write({
-      actorKind: this.subject!.kind === 'agent' ? 'agent' : this.subject!.kind === 'external' ? 'external' : 'human',
+      actorKind:
+        this.subject!.kind === 'agent'
+          ? 'agent'
+          : this.subject!.kind === 'external'
+            ? 'external'
+            : 'human',
       actorId: this.subject!.claims.oid ?? this.subject!.claims.sub ?? 'unknown',
       capability,
       outcome,

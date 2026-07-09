@@ -4,12 +4,12 @@ Repositorio piloto para validar la metodología Dual-Axis CI/CD con el módulo R
 
 ## Documentación viva
 
-| Artefacto | Propósito |
-|-----------|-----------|
-| [docs/piloto-rbac-log.html](docs/piloto-rbac-log.html) | Bitácora de seguimiento — estado de cada tarea, progreso, notas |
-| [docs/MANUAL-CICD.md](docs/MANUAL-CICD.md) | Manual técnico reproducible — camino feliz genérico para cualquier proyecto |
-| [docs/adr/](docs/adr/) | ADRs (Architecture Decision Records) del módulo |
-| [docs/golden/](docs/golden/) | Golden Dataset — casos canónicos de prueba |
+| Artefacto                                              | Propósito                                                                   |
+| ------------------------------------------------------ | --------------------------------------------------------------------------- |
+| [docs/piloto-rbac-log.html](docs/piloto-rbac-log.html) | Bitácora de seguimiento — estado de cada tarea, progreso, notas             |
+| [docs/MANUAL-CICD.md](docs/MANUAL-CICD.md)             | Manual técnico reproducible — camino feliz genérico para cualquier proyecto |
+| [docs/adr/](docs/adr/)                                 | ADRs (Architecture Decision Records) del módulo                             |
+| [docs/golden/](docs/golden/)                           | Golden Dataset — casos canónicos de prueba                                  |
 
 ## Comandos frecuentes
 
@@ -51,18 +51,18 @@ npx playwright test
 
 Siempre escribir el significado entre paréntesis, sin excepciones:
 
-| Acrónimo | Significado |
-|----------|-------------|
-| IAM | Gestión de Identidad y Acceso |
-| RBAC | Control de Acceso Basado en Roles |
-| AFF | Fitness Functions de Arquitectura |
-| BDD | Desarrollo Guiado por Comportamiento |
-| TDD | Desarrollo Guiado por Tests |
-| E2E | Pruebas de extremo a extremo |
-| NFR | Requerimientos No Funcionales |
-| CI | Integración Continua |
-| CD | Entrega Continua |
-| ADR | Architecture Decision Record |
+| Acrónimo | Significado                          |
+| -------- | ------------------------------------ |
+| IAM      | Gestión de Identidad y Acceso        |
+| RBAC     | Control de Acceso Basado en Roles    |
+| AFF      | Fitness Functions de Arquitectura    |
+| BDD      | Desarrollo Guiado por Comportamiento |
+| TDD      | Desarrollo Guiado por Tests          |
+| E2E      | Pruebas de extremo a extremo         |
+| NFR      | Requerimientos No Funcionales        |
+| CI       | Integración Continua                 |
+| CD       | Entrega Continua                     |
+| ADR      | Architecture Decision Record         |
 
 ### Descripción de tests
 
@@ -75,6 +75,7 @@ Los enunciados de tests deben estar en lenguaje de negocio, no técnico:
 ✅ `El analista de RM-Norte obtiene los permisos de su rol (otorgar, denegar y consultar prestaciones) y su unidad organizacional queda registrada como "RM-Norte"`
 
 Cuando un test se repite N veces con el mismo escenario:
+
 - Decir explícitamente cuántas veces se repitió
 - Exponer la variabilidad observada (mín, promedio, mediana, máx, p90, p95)
 - Si no hay variabilidad, decirlo: "sin variabilidad — todas respondieron igual"
@@ -93,12 +94,12 @@ Después de cada fase, actualizar ambos artefactos:
 
 Antes de iniciar cada fase, levantar el visor correspondiente como paso `t0`:
 
-| Fase | Visor |
-|------|-------|
-| Ciclo TDD | `bash scripts/dev-tdd.sh` |
+| Fase           | Visor                                                  |
+| -------------- | ------------------------------------------------------ |
+| Ciclo TDD      | `bash scripts/dev-tdd.sh`                              |
 | k6 Performance | Servidor corriendo + dashboard `http://localhost:5665` |
-| CI | `gh run watch` |
-| Allure | `allure open` |
+| CI             | `gh run watch`                                         |
+| Allure         | `allure open`                                          |
 
 ### Alternativa Azure DevOps
 

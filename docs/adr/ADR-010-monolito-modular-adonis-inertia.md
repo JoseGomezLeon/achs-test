@@ -75,30 +75,30 @@ Esta regla es la que preserva la opción de extraer el servicio más adelante: s
 
 Este ADR decide arquitectura técnica; las reglas de negocio de autorización están delegadas. Para quien llega solo a este documento, el mapa completo es:
 
-| Qué | Dónde |
-|---|---|
-| Roles de negocio (`analista`, `supervisor`, `operador_pagos`, `admin_gobernanza`, `auditor`) y mapeo grupo Entra ID → `BusinessRole` | [`doc/discovery-rbac-core.md`](../discovery-rbac-core.md) §3.2 |
-| Matrices rol → capabilities (quién puede hacer qué: humanos §3.2, externos §3.3, agentes §3.4) | [`rbac_humano_agente.md`](../../../rbac_humano_agente.md) (raíz del repo) |
-| Capability-map materializado en código | [`capability-map.ts`](../../prototypes/rbac-monolyte/app/modules/rbac/domain/access-context/capability-map.ts) + su test unitario |
-| Mapeo claims → `Subject` → `AccessContext` (validación estricta, `ClaimsValidationError`) | [ADR-005](ADR-005-token-mapping.md) |
-| Modelo de datos mínimo (`app_audit`, `monthly_close_approvals`; sin tablas `users`/`roles` en F0-F1) | [ADR-008](ADR-008-modelo-datos-rbac.md) |
-| Reglas de agentes: `effectiveCapabilities = token.roles ∩ AgentRegistry.allowedCapabilities` | [`doc/discovery-rbac-core.md`](../discovery-rbac-core.md) §3.4 y [ADR-006](ADR-006-agent-worker-runtime.md) |
+| Qué                                                                                                                                  | Dónde                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| Roles de negocio (`analista`, `supervisor`, `operador_pagos`, `admin_gobernanza`, `auditor`) y mapeo grupo Entra ID → `BusinessRole` | [`doc/discovery-rbac-core.md`](../discovery-rbac-core.md) §3.2                                                                    |
+| Matrices rol → capabilities (quién puede hacer qué: humanos §3.2, externos §3.3, agentes §3.4)                                       | [`rbac_humano_agente.md`](../../../rbac_humano_agente.md) (raíz del repo)                                                         |
+| Capability-map materializado en código                                                                                               | [`capability-map.ts`](../../prototypes/rbac-monolyte/app/modules/rbac/domain/access-context/capability-map.ts) + su test unitario |
+| Mapeo claims → `Subject` → `AccessContext` (validación estricta, `ClaimsValidationError`)                                            | [ADR-005](ADR-005-token-mapping.md)                                                                                               |
+| Modelo de datos mínimo (`app_audit`, `monthly_close_approvals`; sin tablas `users`/`roles` en F0-F1)                                 | [ADR-008](ADR-008-modelo-datos-rbac.md)                                                                                           |
+| Reglas de agentes: `effectiveCapabilities = token.roles ∩ AgentRegistry.allowedCapabilities`                                         | [`doc/discovery-rbac-core.md`](../discovery-rbac-core.md) §3.4 y [ADR-006](ADR-006-agent-worker-runtime.md)                       |
 
 ### Qué queda obsoleto
 
-| Pieza anterior | Reemplazo |
-|---|---|
-| `@achs/rbac-contracts` / `@achs/pec-contracts` como paquete publicado (ADR-003, ADR-009) | `#rbac/contracts` inline en el módulo |
-| SPA `rbac-front` separada (React + Vite standalone) | Páginas Inertia en `inertia/pages/rbac/` |
-| Effect Tags / Layers / `ManagedRuntime` | Interfaces TS + DI manual (`container.ts`) |
-| Monorepo `packages/rbac-contracts` + `rbac-engine` | Un solo proyecto AdonisJS con módulo interno |
+| Pieza anterior                                                                           | Reemplazo                                    |
+| ---------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `@achs/rbac-contracts` / `@achs/pec-contracts` como paquete publicado (ADR-003, ADR-009) | `#rbac/contracts` inline en el módulo        |
+| SPA `rbac-front` separada (React + Vite standalone)                                      | Páginas Inertia en `inertia/pages/rbac/`     |
+| Effect Tags / Layers / `ManagedRuntime`                                                  | Interfaces TS + DI manual (`container.ts`)   |
+| Monorepo `packages/rbac-contracts` + `rbac-engine`                                       | Un solo proyecto AdonisJS con módulo interno |
 
 ## Alternativas consideradas
 
-| Alternativa | Descartada porque |
-|---|---|
-| Mantener SPA separada + API | Doble deploy, doble auth, paquete de contratos publicado — costo sin beneficio a esta escala |
-| Microservicio RBAC standalone | El único consumidor hoy es el propio monolito PEC2; la frontera modular da la misma disciplina sin red |
+| Alternativa                              | Descartada porque                                                                                                       |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Mantener SPA separada + API              | Doble deploy, doble auth, paquete de contratos publicado — costo sin beneficio a esta escala                            |
+| Microservicio RBAC standalone            | El único consumidor hoy es el propio monolito PEC2; la frontera modular da la misma disciplina sin red                  |
 | Extraer contratos a paquete npm desde ya | Prematuro. Si un consumidor externo aparece (otro motor, SPA PEC), `contracts/` está aislado y se extrae con costo bajo |
 
 ## Consecuencias

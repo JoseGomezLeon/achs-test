@@ -8,18 +8,15 @@
  * - Un humano con múltiples BusinessRoles obtiene la UNIÓN de sus CapabilitySets.
  */
 
-export type BusinessRole = 'analista' | 'supervisor' | 'operador_pagos' | 'admin_gobernanza' | 'auditor'
+export type BusinessRole =
+  'analista' | 'supervisor' | 'operador_pagos' | 'admin_gobernanza' | 'auditor'
 export type ExternalRole = 'empleador'
 
 export const humanCapabilityMap: Readonly<Record<BusinessRole, ReadonlySet<string>>> = {
-  analista: new Set([
-    'prestacion:otorgar',
-    'prestacion:denegar',
-    'prestacion:consultar',
-  ]),
+  analista: new Set(['prestacion:otorgar', 'prestacion:denegar', 'prestacion:consultar']),
 
   supervisor: new Set([
-    'liquidacion:aprobar-cierre',  // ADR-007: aprueba pero NO ejecuta el cierre
+    'liquidacion:aprobar-cierre', // ADR-007: aprueba pero NO ejecuta el cierre
     'liquidacion:consultar',
     'prestacion:consultar',
   ]),
@@ -30,9 +27,7 @@ export const humanCapabilityMap: Readonly<Record<BusinessRole, ReadonlySet<strin
     'liquidacion:consultar',
   ]),
 
-  auditor: new Set([
-    'auditoria:leer',
-  ]),
+  auditor: new Set(['auditoria:leer']),
 
   admin_gobernanza: new Set([
     'auditoria:leer',
@@ -48,7 +43,5 @@ export const humanCapabilityMap: Readonly<Record<BusinessRole, ReadonlySet<strin
 } as const
 
 export const externalCapabilityMap: Readonly<Record<ExternalRole, ReadonlySet<string>>> = {
-  empleador: new Set([
-    'hecho-causal:consultar-estado',
-  ]),
+  empleador: new Set(['hecho-causal:consultar-estado']),
 } as const

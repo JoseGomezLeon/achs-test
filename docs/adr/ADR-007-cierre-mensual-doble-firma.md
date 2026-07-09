@@ -47,11 +47,11 @@ Job PDN-PAG-001
 
 ## Alternativas consideradas
 
-| Alternativa | Descartada porque |
-|---|---|
-| Mantener `liquidacion:cerrar-ciclo` para Supervisor y Operador | Permite cierre unilateral y debilita auditoria |
-| Permitir que Supervisor ejecute el cierre completo | Mezcla aprobacion humana con ejecucion tecnica y dificulta idempotencia |
-| Dejar la doble firma para una fase futura sin modelarla | La capacidad quedaria mal definida desde TS07 |
+| Alternativa                                                    | Descartada porque                                                       |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Mantener `liquidacion:cerrar-ciclo` para Supervisor y Operador | Permite cierre unilateral y debilita auditoria                          |
+| Permitir que Supervisor ejecute el cierre completo             | Mezcla aprobacion humana con ejecucion tecnica y dificulta idempotencia |
+| Dejar la doble firma para una fase futura sin modelarla        | La capacidad quedaria mal definida desde TS07                           |
 
 ## Consecuencias
 

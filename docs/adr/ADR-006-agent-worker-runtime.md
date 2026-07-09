@@ -105,12 +105,12 @@ Ejemplo:
 
 ## Alternativas consideradas
 
-| Alternativa | Descartada porque |
-|---|---|
-| Un microservicio por worker | Agrega despliegue, observabilidad y contratos de red antes de validar el dominio |
-| Un motor por agente | Duplica reglas de negocio y hace mas dificil reproducir calculos |
-| Workers dentro del proceso HTTP | Mezcla ciclos de vida distintos; un job pesado puede afectar latencia de usuarios |
-| MCP como fuente de permisos | MCP puede servir a herramientas de desarrollo, pero no debe ser la autoridad productiva de RBAC |
+| Alternativa                     | Descartada porque                                                                               |
+| ------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Un microservicio por worker     | Agrega despliegue, observabilidad y contratos de red antes de validar el dominio                |
+| Un motor por agente             | Duplica reglas de negocio y hace mas dificil reproducir calculos                                |
+| Workers dentro del proceso HTTP | Mezcla ciclos de vida distintos; un job pesado puede afectar latencia de usuarios               |
+| MCP como fuente de permisos     | MCP puede servir a herramientas de desarrollo, pero no debe ser la autoridad productiva de RBAC |
 
 ## Consecuencias
 

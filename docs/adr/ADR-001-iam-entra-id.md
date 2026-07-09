@@ -29,10 +29,10 @@ Para agentes por Client Credentials el token resultante entra por el mismo `auth
 
 Implementaciones previstas:
 
-| Adapter | Uso | Fuente de claims |
-|---|---|---|
-| `OidcIamAdapter` | Produccion e integracion | Entra ID o mock OIDC via discovery/JWKS |
-| `StubIamAdapter` | Unit tests y desarrollo rapido | Fixture in-memory deterministico |
+| Adapter          | Uso                            | Fuente de claims                        |
+| ---------------- | ------------------------------ | --------------------------------------- |
+| `OidcIamAdapter` | Produccion e integracion       | Entra ID o mock OIDC via discovery/JWKS |
+| `StubIamAdapter` | Unit tests y desarrollo rapido | Fixture in-memory deterministico        |
 
 ### Flujo para humanos
 
@@ -82,15 +82,15 @@ Ejemplo:
 
 ### Claims requeridos en Entra ID
 
-| Claim | Origen | Uso |
-|---|---|---|
-| `oid` | Entra ID (built-in) | `HumanSubject.userId` |
-| `email` | Entra ID (built-in) | `HumanSubject.email` |
-| `groups` | Entra ID (requiere Azure AD Premium P1) | Mapeo → `BusinessRole` |
-| `extension_orgUnit` | Custom extension attribute | `HumanSubject.orgUnit` |
-| `appId` / `azp` | Entra ID (built-in) | `AgentSubject.agentId` |
-| `oid` | Entra ID (built-in) | Service Principal ID para auditoria y registry |
-| `roles` | Entra ID App Roles | Grants externos que se intersectan con `AgentRegistry` |
+| Claim               | Origen                                  | Uso                                                    |
+| ------------------- | --------------------------------------- | ------------------------------------------------------ |
+| `oid`               | Entra ID (built-in)                     | `HumanSubject.userId`                                  |
+| `email`             | Entra ID (built-in)                     | `HumanSubject.email`                                   |
+| `groups`            | Entra ID (requiere Azure AD Premium P1) | Mapeo → `BusinessRole`                                 |
+| `extension_orgUnit` | Custom extension attribute              | `HumanSubject.orgUnit`                                 |
+| `appId` / `azp`     | Entra ID (built-in)                     | `AgentSubject.agentId`                                 |
+| `oid`               | Entra ID (built-in)                     | Service Principal ID para auditoria y registry         |
+| `roles`             | Entra ID App Roles                      | Grants externos que se intersectan con `AgentRegistry` |
 
 ### Configuracion OIDC
 
@@ -110,12 +110,12 @@ Validaciones minimas:
 
 ### Alternativas consideradas
 
-| Alternativa | Descartada porque |
-|---|---|
-| Auth0 / Okta | No es el IAM corporativo de ACHS; requeriría sincronización de usuarios |
-| JWT propio firmado | Sin infraestructura de PKI; Entra ID ya lo resuelve |
-| LDAP on-prem | ACHS está migrando a cloud; no se justifica inversión en legacy |
-| `@adonisjs/ally` | Es social auth y no provee un provider oficial Microsoft/Entra ID para este flujo corporativo |
+| Alternativa                               | Descartada porque                                                                                |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Auth0 / Okta                              | No es el IAM corporativo de ACHS; requeriría sincronización de usuarios                          |
+| JWT propio firmado                        | Sin infraestructura de PKI; Entra ID ya lo resuelve                                              |
+| LDAP on-prem                              | ACHS está migrando a cloud; no se justifica inversión en legacy                                  |
+| `@adonisjs/ally`                          | Es social auth y no provee un provider oficial Microsoft/Entra ID para este flujo corporativo    |
 | Implementacion manual de OIDC con `fetch` | Aumenta superficie de error en validacion de tokens, JWKS, issuer, audience y rotacion de llaves |
 
 ## Consecuencias

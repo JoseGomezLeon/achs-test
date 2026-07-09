@@ -24,10 +24,10 @@
 > Para cada uno: qué interfaz TypeScript lo abstrae, qué implementación real usa en producción,
 > y qué stub determinista usará en tests.
 
-| Sistema externo | Interfaz de dominio | Implementación producción | Stub para tests |
-|---|---|---|---|
-| [ej: Proveedor de identidad] | `[NombreAdapter]` | `[ImplAdapter]` | `[StubAdapter]` |
-| [ej: Base de datos / auditoría] | `[NombreWriter]` | `[ImplWriter]` | `[StubWriter]` |
+| Sistema externo                 | Interfaz de dominio | Implementación producción | Stub para tests |
+| ------------------------------- | ------------------- | ------------------------- | --------------- |
+| [ej: Proveedor de identidad]    | `[NombreAdapter]`   | `[ImplAdapter]`           | `[StubAdapter]` |
+| [ej: Base de datos / auditoría] | `[NombreWriter]`    | `[ImplWriter]`            | `[StubWriter]`  |
 
 ### 1.1. Contrato de [NombreAdapter]
 
@@ -53,11 +53,11 @@ export interface [NombreWriter] {
 > Cada token debe representar un caso de uso diferente (un rol, un tipo de sujeto, un caso borde).
 > El agente creará un StubAdapter con exactamente estos tokens.
 
-| Token / ID | Sujeto que representa | Características |
-|---|---|---|
-| `[token-1]` | [descripción] | [rol, permisos, atributos] |
-| `[token-2]` | [descripción] | [rol, permisos, atributos] |
-| `[token-error]` | Token inválido | Debe lanzar error de autenticación |
+| Token / ID      | Sujeto que representa | Características                    |
+| --------------- | --------------------- | ---------------------------------- |
+| `[token-1]`     | [descripción]         | [rol, permisos, atributos]         |
+| `[token-2]`     | [descripción]         | [rol, permisos, atributos]         |
+| `[token-error]` | Token inválido        | Debe lanzar error de autenticación |
 
 ---
 
@@ -68,11 +68,11 @@ export interface [NombreWriter] {
 > Lista los roles de negocio. Estos son los roles que tienen los usuarios humanos.
 > No mezclar con roles técnicos o de sistema.
 
-| Identificador del rol | Descripción |
-|---|---|
-| `[rol_1]` | [qué puede hacer en términos de negocio] |
-| `[rol_2]` | [qué puede hacer en términos de negocio] |
-| `[rol_N]` | [qué puede hacer en términos de negocio] |
+| Identificador del rol | Descripción                              |
+| --------------------- | ---------------------------------------- |
+| `[rol_1]`             | [qué puede hacer en términos de negocio] |
+| `[rol_2]`             | [qué puede hacer en términos de negocio] |
+| `[rol_N]`             | [qué puede hacer en términos de negocio] |
 
 ### 2.2. Matriz de capacidades
 
@@ -80,11 +80,11 @@ export interface [NombreWriter] {
 > Una celda vacía significa denegación implícita (deny-by-default).
 > Las capacidades deben usar el formato `recurso:accion` en minúsculas.
 
-| Capacidad | [rol_1] | [rol_2] | [rol_3] | [rol_N] |
-|---|:---:|:---:|:---:|:---:|
-| `[recurso]:[accion]` | ✓ | | | ✓ |
-| `[recurso]:[accion]` | | ✓ | | |
-| `[recurso]:[accion]` | | ✓ | ✓ | |
+| Capacidad            | [rol_1] | [rol_2] | [rol_3] | [rol_N] |
+| -------------------- | :-----: | :-----: | :-----: | :-----: |
+| `[recurso]:[accion]` |    ✓    |         |         |    ✓    |
+| `[recurso]:[accion]` |         |    ✓    |         |         |
+| `[recurso]:[accion]` |         |    ✓    |    ✓    |         |
 
 > **Nota:** si existe alguna capacidad que solo pueden ejercer procesos automatizados
 > (jobs, agentes), indícala aquí con una nota. Los humanos no deben tenerla.
@@ -93,8 +93,8 @@ export interface [NombreWriter] {
 
 > Lista los agentes batch o procesos automáticos que interactúan con el módulo.
 
-| Agente | Capacidades máximas |
-|---|---|
+| Agente         | Capacidades máximas              |
+| -------------- | -------------------------------- |
 | `[nombre-job]` | `[capacidad_1]`, `[capacidad_2]` |
 
 ### 2.4. Sujetos externos (si aplica)
@@ -102,8 +102,8 @@ export interface [NombreWriter] {
 > Usuarios o sistemas de terceros que acceden con capacidades limitadas.
 
 | Tipo de sujeto externo | Capacidades permitidas |
-|---|---|
-| `[tipo-externo]` | `[capacidad_1]` |
+| ---------------------- | ---------------------- |
+| `[tipo-externo]`       | `[capacidad_1]`        |
 
 ---
 
@@ -135,11 +135,11 @@ export interface [NombreWriter] {
 > Define los códigos de error que el módulo puede devolver. Estos no deben cambiar
 > entre versiones porque los clientes los referencian por string.
 
-| Código | HTTP | Cuándo |
-|---|---|---|
-| `[codigo_1]` | 401 | [cuándo ocurre] |
-| `[codigo_2]` | 403 | [cuándo ocurre] |
-| `[codigo_3]` | 403 | [cuándo ocurre] |
+| Código       | HTTP | Cuándo          |
+| ------------ | ---- | --------------- |
+| `[codigo_1]` | 401  | [cuándo ocurre] |
+| `[codigo_2]` | 403  | [cuándo ocurre] |
+| `[codigo_3]` | 403  | [cuándo ocurre] |
 
 ---
 
@@ -176,9 +176,9 @@ No puede haber dependencias circulares entre capas de dominio.
 
 > Define qué se implementa en esta primera iteración y qué queda diferido.
 
-| Componente | Estado |
-|---|---|
-| [Interfaz] + [Stub] | Implementado en Pre-Run |
-| [Clase A] | Implementado en TDD sprint 1 |
-| [Clase B] | Diferido (sprint N) |
-| [Integración real] | Diferido (sprint N) |
+| Componente          | Estado                       |
+| ------------------- | ---------------------------- |
+| [Interfaz] + [Stub] | Implementado en Pre-Run      |
+| [Clase A]           | Implementado en TDD sprint 1 |
+| [Clase B]           | Diferido (sprint N)          |
+| [Integración real]  | Diferido (sprint N)          |

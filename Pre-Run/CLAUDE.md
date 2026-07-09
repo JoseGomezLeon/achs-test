@@ -24,17 +24,17 @@ Pre-Run termina cuando tienes: ADR síntesis aceptado, interfaces y stubs de dom
 
 > Si el proyecto usa otro stack, adapta los comandos de esta sección.
 
-| Tecnología | Uso |
-|---|---|
-| AdonisJS 6 + React + Inertia.js | Framework servidor + frontend |
-| Japa | Tests unitarios |
-| SQLite in-memory | Base de datos para tests unitarios (sin Docker) |
-| Playwright + Chrome | Tests E2E headless |
-| Cucumber JS 13 | Tests BDD |
-| Testcontainers | Base de datos efímera para integración |
-| dependency-cruiser | Fitness functions arquitectónicas |
-| tsx | Runtime TypeScript en Node v22 |
-| Allure | Reportes agregados |
+| Tecnología                      | Uso                                             |
+| ------------------------------- | ----------------------------------------------- |
+| AdonisJS 6 + React + Inertia.js | Framework servidor + frontend                   |
+| Japa                            | Tests unitarios                                 |
+| SQLite in-memory                | Base de datos para tests unitarios (sin Docker) |
+| Playwright + Chrome             | Tests E2E headless                              |
+| Cucumber JS 13                  | Tests BDD                                       |
+| Testcontainers                  | Base de datos efímera para integración          |
+| dependency-cruiser              | Fitness functions arquitectónicas               |
+| tsx                             | Runtime TypeScript en Node v22                  |
+| Allure                          | Reportes agregados                              |
 
 ## Comandos clave
 
@@ -100,44 +100,57 @@ config/
 ## Gotchas del stack (ya resueltos — aplicar directamente)
 
 ### 1. tsx vs @poppinss/ts-exec en Node v22
+
 `@poppinss/ts-exec` falla con `ERR_UNKNOWN_FILE_EXTENSION` en Node v22.
 **Nunca usar `node ace <cmd>`. Siempre:**
+
 ```bash
 npx tsx bin/server.ts     # en lugar de: node ace serve
 npx tsx bin/test.ts       # en lugar de: node ace test
 ```
 
 ### 2. Vite manifest: build/ vs public/
+
 `vite build` escribe el manifest en `build/public/assets/` pero el servidor de desarrollo
 lo busca en `public/assets/`. Solución en `package.json`:
+
 ```json
 "build:frontend": "vite build && mkdir -p public && cp -r build/public/assets public/",
 "test:e2e": "npm run build:frontend && playwright test"
 ```
 
 ### 3. Cucumber: --loader deprecado en Node v20+
+
 `cucumber-js --loader tsx` falla. Usar siempre:
+
 ```bash
 node --import tsx/esm ./node_modules/.bin/cucumber-js ...
 ```
 
 ### 4. Alias de imports en IoC
+
 El alias `#app/modules/...` no está en `package.json → imports` por defecto.
 En `config/ioc.ts` usar rutas relativas:
+
 ```typescript
-import('../app/modules/<modulo>/domain/iam/iam-adapter.js')   // ✓
-import('#app/modules/<modulo>/domain/iam/iam-adapter.js')      // ✗
+import('../app/modules/<modulo>/domain/iam/iam-adapter.js') // ✓
+import('#app/modules/<modulo>/domain/iam/iam-adapter.js') // ✗
 ```
 
 ### 5. playwright.config.ts: executablePath
+
 Va en `use.launchOptions`, no en `use` directamente:
+
 ```typescript
 use: {
-  launchOptions: { executablePath: '/usr/bin/google-chrome' }
+  launchOptions: {
+    executablePath: '/usr/bin/google-chrome'
+  }
 }
 ```
 
 ### 6. webServer en playwright.config.ts
+
 ```typescript
 webServer: {
   command: 'npx tsx bin/server.ts',  // NO: 'node ace serve'

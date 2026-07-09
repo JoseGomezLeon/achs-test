@@ -16,7 +16,11 @@ When('intenta ejecutar la capacidad {string}', function (this: RbacWorld, capabi
 })
 
 Then('el acceso es concedido', function (this: RbacWorld) {
-  assert.equal(this.lastAccessResult, 'granted', `se esperaba acceso concedido, código de denegación: ${this.lastDenialCode}`)
+  assert.equal(
+    this.lastAccessResult,
+    'granted',
+    `se esperaba acceso concedido, código de denegación: ${this.lastDenialCode}`
+  )
 })
 
 Then('el acceso es denegado con código {string}', function (this: RbacWorld, code: string) {

@@ -23,8 +23,8 @@ services:
   toxiproxy:
     image: ghcr.io/shopify/toxiproxy:latest
     ports:
-      - '8474:8474'   # API de administración de Toxiproxy
-      - '5432:5432'   # Proxy de Postgres (configurable vía toxiproxy.config.json)
+      - '8474:8474' # API de administración de Toxiproxy
+      - '5432:5432' # Proxy de Postgres (configurable vía toxiproxy.config.json)
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://localhost:8474/version']
       interval: 5s

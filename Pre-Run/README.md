@@ -27,6 +27,7 @@ Pre-Run/
 ### Paso 1 — Rellenar la plantilla de dominio
 
 Antes de darle nada al agente, completa `dominio/ADR-SINTESIS-TEMPLATE.md` con la información de tu módulo:
+
 - Qué sistemas externos consume
 - Qué roles de negocio existen
 - Qué puede hacer cada rol (capacidades)
@@ -64,40 +65,40 @@ Cada etapa tiene una sola condición de salida. Pre-Run termina cuando todos los
 
 ### Fase pdoc — Contratos de dominio
 
-| Tarea | Entregable |
-|---|---|
+| Tarea  | Entregable                                                                                      |
+| ------ | ----------------------------------------------------------------------------------------------- |
 | pdoct1 | ADR síntesis: sistemas externos, roles, capacidades, reglas de negocio, límites de arquitectura |
-| pdoct2 | Golden Dataset: casos canónicos de prueba por categoría |
-| pdoct3 | Interfaces TypeScript de sistemas externos + stubs deterministas + tipos de dominio + IoC |
-| pdoct4 | Feature files Gherkin: 1 por área de negocio, tags `@smoke` y `@<modulo>` |
+| pdoct2 | Golden Dataset: casos canónicos de prueba por categoría                                         |
+| pdoct3 | Interfaces TypeScript de sistemas externos + stubs deterministas + tipos de dominio + IoC       |
+| pdoct4 | Feature files Gherkin: 1 por área de negocio, tags `@smoke` y `@<modulo>`                       |
 
 ### Fase p2 — Infraestructura de tests
 
-| Entregable | Para qué sirve |
-|---|---|
-| `.env.test` | Variables de entorno para tests, incluyendo `TEST_MODE=architecture` |
-| `config/ioc.ts` | Inyección de dependencias: stubs en test, implementación real en producción |
-| `docker-compose.test.yml` | Servicios para integración: Pact Broker, Toxiproxy, base de datos |
-| `.dependency-cruiser.cjs` | Reglas AFF: impide que el código viole los límites de arquitectura |
-| `scripts/dev-tdd.sh` | Watcher dual: AFF + tests unitarios en paralelo durante el ciclo TDD |
-| Primer test unitario | Verifica la matriz de capacidades del dominio, verde sin código de producción |
+| Entregable                | Para qué sirve                                                                |
+| ------------------------- | ----------------------------------------------------------------------------- |
+| `.env.test`               | Variables de entorno para tests, incluyendo `TEST_MODE=architecture`          |
+| `config/ioc.ts`           | Inyección de dependencias: stubs en test, implementación real en producción   |
+| `docker-compose.test.yml` | Servicios para integración: Pact Broker, Toxiproxy, base de datos             |
+| `.dependency-cruiser.cjs` | Reglas AFF: impide que el código viole los límites de arquitectura            |
+| `scripts/dev-tdd.sh`      | Watcher dual: AFF + tests unitarios en paralelo durante el ciclo TDD          |
+| Primer test unitario      | Verifica la matriz de capacidades del dominio, verde sin código de producción |
 
 ### Fase p3 — Test E2E
 
-| Entregable | Para qué sirve |
-|---|---|
-| `playwright.config.ts` | Configura Playwright con arranque automático del servidor |
-| Primer test E2E | Verifica que el servidor levanta y sirve contenido (smoke) |
-| Reporte HTML | Evidencia de que el test pasó |
+| Entregable             | Para qué sirve                                             |
+| ---------------------- | ---------------------------------------------------------- |
+| `playwright.config.ts` | Configura Playwright con arranque automático del servidor  |
+| Primer test E2E        | Verifica que el servidor levanta y sirve contenido (smoke) |
+| Reporte HTML           | Evidencia de que el test pasó                              |
 
 ### Fase p4 — Suite BDD
 
-| Entregable | Para qué sirve |
-|---|---|
+| Entregable                   | Para qué sirve                                                                  |
+| ---------------------------- | ------------------------------------------------------------------------------- |
 | `tests/bdd/support/world.ts` | World de Cucumber: stubs, clasificación de sujetos, verificación de capacidades |
-| `tests/bdd/steps/*.ts` | Step definitions conectadas al dominio vía IoC, sin HTTP |
-| Testcontainers configurado | Base de datos efímera lista para suites de integración futuras |
-| Suite BDD verde | Todos los escenarios del dominio pasan con stubs |
+| `tests/bdd/steps/*.ts`       | Step definitions conectadas al dominio vía IoC, sin HTTP                        |
+| Testcontainers configurado   | Base de datos efímera lista para suites de integración futuras                  |
+| Suite BDD verde              | Todos los escenarios del dominio pasan con stubs                                |
 
 ### Estado al terminar Pre-Run
 
@@ -133,12 +134,12 @@ Ese ciclo repite por cada historia del sprint, con la red de seguridad que Pre-R
 
 El agente no instala el entorno base. Antes de ejecutar Pre-Run, el PC debe tener:
 
-| Herramienta | Versión mínima | Para qué |
-|---|---|---|
-| Node.js | v20+ (recomendado v22) | Runtime principal |
-| Docker | cualquiera reciente | Testcontainers, docker-compose |
-| npm | viene con Node | Gestión de dependencias |
-| Chrome / Chromium | cualquiera | Tests E2E headless |
-| Git | cualquiera | Control de versiones |
+| Herramienta       | Versión mínima         | Para qué                       |
+| ----------------- | ---------------------- | ------------------------------ |
+| Node.js           | v20+ (recomendado v22) | Runtime principal              |
+| Docker            | cualquiera reciente    | Testcontainers, docker-compose |
+| npm               | viene con Node         | Gestión de dependencias        |
+| Chrome / Chromium | cualquiera             | Tests E2E headless             |
+| Git               | cualquiera             | Control de versiones           |
 
 El proyecto debe estar scaffoldeado con las dependencias base instaladas antes de iniciar Pre-Run.

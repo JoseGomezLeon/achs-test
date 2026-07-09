@@ -2,17 +2,17 @@ import type { TokenClaims } from '../iam/token-claims.js'
 import { humanCapabilityMap, externalCapabilityMap } from './capability-map.js'
 
 export const ENTRA_GROUP_TO_ROLE: Record<string, keyof typeof humanCapabilityMap> = {
-  'achs-analistas':        'analista',
-  'achs-supervisores':     'supervisor',
-  'achs-operadores-pago':  'operador_pagos',
+  'achs-analistas': 'analista',
+  'achs-supervisores': 'supervisor',
+  'achs-operadores-pago': 'operador_pagos',
   'achs-admin-gobernanza': 'admin_gobernanza',
-  'achs-auditores':        'auditor',
+  'achs-auditores': 'auditor',
 }
 
 export type Subject =
-  | { kind: 'human';    userId: string; orgUnit: string }
-  | { kind: 'agent';    appId: string  }
-  | { kind: 'external'; sub: string    }
+  | { kind: 'human'; userId: string; orgUnit: string }
+  | { kind: 'agent'; appId: string }
+  | { kind: 'external'; sub: string }
 
 export class AccessContext {
   constructor(
@@ -42,7 +42,7 @@ export class AccessContextBuilder {
 
     // Humano
     const roles = (claims.groups ?? [])
-      .map(g => ENTRA_GROUP_TO_ROLE[g])
+      .map((g) => ENTRA_GROUP_TO_ROLE[g])
       .filter((r): r is keyof typeof humanCapabilityMap => r !== undefined)
 
     const caps = new Set<string>()

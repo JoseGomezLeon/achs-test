@@ -25,14 +25,14 @@ Se necesita decidir si el `skeleton-rbac` re-define estos tipos (duplicación) o
 
 ```typescript
 // skeleton-rbac/src/service/authorization-service.ts
-import { Effect, Layer } from "effect"
+import { Effect, Layer } from 'effect'
 import {
   AuthorizationService,
   AccessDeniedError,
   RelationViolationError,
   Capability,
-  AccessContext
-} from "@achs/pec-contracts/auth"
+  AccessContext,
+} from '@achs/pec-contracts/auth'
 
 // Implementación del Tag
 export const AuthorizationServiceReal = Layer.effect(
@@ -46,24 +46,24 @@ export const AuthorizationServiceReal = Layer.effect(
 
 ### Qué tipos son de dominio (contracts) vs locales (rbac)
 
-| Tipo | Origen | Razón |
-|---|---|---|
-| `Subject`, `HumanSubject`, `AgentSubject`, `ExternalSubject` | `@achs/pec-contracts` | Tipos de dominio del RBAC |
-| `Capability` | `@achs/pec-contracts` | Verbo de dominio |
-| `AccessContext` | `@achs/pec-contracts` | Contexto de autorización unificado |
-| `AuthorizationService` (Tag) | `@achs/pec-contracts` | Contrato del servicio |
-| `AccessDeniedError`, `RelationViolationError` | `@achs/pec-contracts` | Errores de dominio |
-| `IamAdapter` | `skeleton-rbac` (local) | Detalle de infraestructura (cómo se autentica, no qué se autoriza) |
-| `TokenClaims` | `skeleton-rbac` (local) | Representación intermedia de claims de JWT |
-| `AuthenticationError` | `skeleton-rbac` (local) | Error de infraestructura (token inválido, no error de dominio) |
+| Tipo                                                         | Origen                  | Razón                                                              |
+| ------------------------------------------------------------ | ----------------------- | ------------------------------------------------------------------ |
+| `Subject`, `HumanSubject`, `AgentSubject`, `ExternalSubject` | `@achs/pec-contracts`   | Tipos de dominio del RBAC                                          |
+| `Capability`                                                 | `@achs/pec-contracts`   | Verbo de dominio                                                   |
+| `AccessContext`                                              | `@achs/pec-contracts`   | Contexto de autorización unificado                                 |
+| `AuthorizationService` (Tag)                                 | `@achs/pec-contracts`   | Contrato del servicio                                              |
+| `AccessDeniedError`, `RelationViolationError`                | `@achs/pec-contracts`   | Errores de dominio                                                 |
+| `IamAdapter`                                                 | `skeleton-rbac` (local) | Detalle de infraestructura (cómo se autentica, no qué se autoriza) |
+| `TokenClaims`                                                | `skeleton-rbac` (local) | Representación intermedia de claims de JWT                         |
+| `AuthenticationError`                                        | `skeleton-rbac` (local) | Error de infraestructura (token inválido, no error de dominio)     |
 
 ## Alternativas consideradas
 
-| Alternativa | Descartada porque |
-|---|---|
-| Duplicar tipos en skeleton-rbac | Si cambia el contrato, hay que actualizar dos lugares. Inconsistencia garantizada. |
-| Mover los contratos a skeleton-rbac | Los contratos son usados por el engine también. El package compartido es el punto único de verdad. |
-| Usar imports relativos al monorepo | `@achs/pec-contracts` ya está configurado como workspace npm. Usar el alias es la práctica estándar. |
+| Alternativa                         | Descartada porque                                                                                    |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Duplicar tipos en skeleton-rbac     | Si cambia el contrato, hay que actualizar dos lugares. Inconsistencia garantizada.                   |
+| Mover los contratos a skeleton-rbac | Los contratos son usados por el engine también. El package compartido es el punto único de verdad.   |
+| Usar imports relativos al monorepo  | `@achs/pec-contracts` ya está configurado como workspace npm. Usar el alias es la práctica estándar. |
 
 ## Consecuencias
 

@@ -10,10 +10,10 @@ Los ADRs 001–008 definen las decisiones técnicas del motor RBAC pero ninguno 
 
 La distinción clave que justifica la estructura:
 
-| Paquete | Publicado como npm | Consumidores |
-|---|---|---|
-| `@achs/rbac-contracts` | Sí | `pec-engine`, la SPA de presentación, otros motores futuros |
-| `@achs/rbac-engine` | No — es el deployable | Solo el runtime propio |
+| Paquete                | Publicado como npm    | Consumidores                                                |
+| ---------------------- | --------------------- | ----------------------------------------------------------- |
+| `@achs/rbac-contracts` | Sí                    | `pec-engine`, la SPA de presentación, otros motores futuros |
+| `@achs/rbac-engine`    | No — es el deployable | Solo el runtime propio                                      |
 
 `skeleton-rbac` publica `rbac-contracts` porque tiene una **capa de presentación separada** (SPA). Esa SPA necesita los tipos (`Subject`, `Capability`, `BusinessRole`) sin importar el engine completo. `pec-engine` también los necesita para integrar autorización. Ambos consumen el mismo paquete liviano.
 
@@ -106,17 +106,13 @@ skeleton-rbac/
 ```typescript
 // rbac-contracts/src/capability.ts — dominio puro
 export type Capability =
-  | "prestacion:otorgar"
-  | "calculo:ejecutar"
-  | "liquidacion:cerrar-ciclo"
-  | "agente:ejecutar-ts"
-  // ... todos los verbos de dominio
+  'prestacion:otorgar' | 'calculo:ejecutar' | 'liquidacion:cerrar-ciclo' | 'agente:ejecutar-ts'
+// ... todos los verbos de dominio
 
 // rbac-contracts/src/authorization.ts — Tag + errores
-export const AuthorizationService =
-  Context.GenericTag<AuthorizationService>("AuthorizationService")
+export const AuthorizationService = Context.GenericTag<AuthorizationService>('AuthorizationService')
 
-export class AccessDeniedError extends Data.TaggedError("AccessDeniedError")<{
+export class AccessDeniedError extends Data.TaggedError('AccessDeniedError')<{
   readonly capability: Capability
   readonly subjectKind: string
   readonly message: string
@@ -131,17 +127,17 @@ export class AccessDeniedError extends Data.TaggedError("AccessDeniedError")<{
 
 ```typescript
 // rbac-engine/src/domain/app-context.ts
-import { AuthorizationService } from "@achs/rbac-contracts"   // Tag del contrato público
+import { AuthorizationService } from '@achs/rbac-contracts' // Tag del contrato público
 
 export const AppLayer = Layer.mergeAll(
   // IamAdapter: valida tokens JWT contra Entra ID
-  OidcIamAdapterLayer,          // stub en dev: StubIamAdapterLayer
+  OidcIamAdapterLayer, // stub en dev: StubIamAdapterLayer
 
   // AuthorizationService: verifica capacidades del AccessContext
-  AuthorizationServiceReal,     // stub en tests: AuthorizationServiceStub
+  AuthorizationServiceReal, // stub en tests: AuthorizationServiceStub
 
   // AppAuditWriter: persiste eventos de auth en app_audit
-  AppAuditWriterService,        // stub en tests: AppAuditWriterStub
+  AppAuditWriterService // stub en tests: AppAuditWriterStub
 )
 ```
 
@@ -149,15 +145,15 @@ export const AppLayer = Layer.mergeAll(
 
 ### 4. Reglas del límite
 
-| Módulo | Puede importar | Nunca importa |
-|---|---|---|
-| `rbac-contracts/src/` | `effect ^3.x` | `@adonisjs/*`, Lucid, `openid-client`, `pec-*` |
-| `rbac-engine/src/domain/iam/` | `effect`, `openid-client`, tipos locales | `@achs/rbac-contracts`, Lucid, Adonis |
-| `rbac-engine/src/domain/access-context/` | `@achs/rbac-contracts`, tipos de `iam/`, `registry/` | Adonis, Lucid, HTTP |
-| `rbac-engine/src/domain/authorization/` | `@achs/rbac-contracts`, `access-context/` | `iam/`, Adonis |
-| `rbac-engine/src/domain/registry/` | `@achs/rbac-contracts` (solo tipos) | Todo lo demás |
-| `rbac-engine/src/domain/audit/` | `@achs/rbac-contracts`, Lucid | `iam/`, `access-context/` |
-| `rbac-engine/app/middleware/` | `iam/`, `access-context/`, Adonis HTTP | use-cases de dominio |
+| Módulo                                   | Puede importar                                       | Nunca importa                                  |
+| ---------------------------------------- | ---------------------------------------------------- | ---------------------------------------------- |
+| `rbac-contracts/src/`                    | `effect ^3.x`                                        | `@adonisjs/*`, Lucid, `openid-client`, `pec-*` |
+| `rbac-engine/src/domain/iam/`            | `effect`, `openid-client`, tipos locales             | `@achs/rbac-contracts`, Lucid, Adonis          |
+| `rbac-engine/src/domain/access-context/` | `@achs/rbac-contracts`, tipos de `iam/`, `registry/` | Adonis, Lucid, HTTP                            |
+| `rbac-engine/src/domain/authorization/`  | `@achs/rbac-contracts`, `access-context/`            | `iam/`, Adonis                                 |
+| `rbac-engine/src/domain/registry/`       | `@achs/rbac-contracts` (solo tipos)                  | Todo lo demás                                  |
+| `rbac-engine/src/domain/audit/`          | `@achs/rbac-contracts`, Lucid                        | `iam/`, `access-context/`                      |
+| `rbac-engine/app/middleware/`            | `iam/`, `access-context/`, Adonis HTTP               | use-cases de dominio                           |
 
 ---
 
@@ -167,13 +163,13 @@ export const AppLayer = Layer.mergeAll(
 
 ```typescript
 // pec-engine/src/domain/use-cases/otorgar-pension.ts
-import { AuthorizationService } from "@achs/rbac-contracts"   // ← del motor RBAC
-import { FrameworkResolverService } from "@achs/pec-contracts/marco-normativo"
+import { AuthorizationService } from '@achs/rbac-contracts' // ← del motor RBAC
+import { FrameworkResolverService } from '@achs/pec-contracts/marco-normativo'
 
 const otorgarPension = (cmd: OtorgarPrestacionCmd) =>
   Effect.gen(function* () {
     const auth = yield* AuthorizationService
-    yield* auth.require("prestacion:otorgar")
+    yield* auth.require('prestacion:otorgar')
     // ...
   })
 ```
@@ -182,23 +178,23 @@ En producción, `pec-engine/src/domain/app-context.ts` monta el Layer que provee
 
 ```typescript
 // Antes F0 (stub local en pec)
-import { AuthorizationServiceStub } from "./auth/authorization-service-stub.js"
+import { AuthorizationServiceStub } from './auth/authorization-service-stub.js'
 
 // Producción (Layer de rbac-engine)
-import { AuthorizationServiceReal } from "@achs/rbac-engine"
+import { AuthorizationServiceReal } from '@achs/rbac-engine'
 ```
 
 ---
 
 ### 6. Ciclo de vida de implementaciones
 
-| Fase | IamAdapter | AuthorizationService | Activado por |
-|---|---|---|---|
-| F0 skeleton | — | stub allow-all en pec-engine | AppLayer de pec |
-| TS07 | `StubIamAdapterLayer` | stub en pec-engine | `IAM_MODE=stub` |
-| TS08 | `OidcIamAdapterLayer` contra mock OIDC local | stub en pec-engine | `IAM_MODE=oidc-local` |
-| TS09 | `OidcIamAdapterLayer` | `AuthorizationServiceReal` de rbac-engine | AppLayer de pec con rbac real |
-| Producción | `OidcIamAdapterLayer` contra Entra ID | `AuthorizationServiceReal` | `NODE_ENV=production` |
+| Fase        | IamAdapter                                   | AuthorizationService                      | Activado por                  |
+| ----------- | -------------------------------------------- | ----------------------------------------- | ----------------------------- |
+| F0 skeleton | —                                            | stub allow-all en pec-engine              | AppLayer de pec               |
+| TS07        | `StubIamAdapterLayer`                        | stub en pec-engine                        | `IAM_MODE=stub`               |
+| TS08        | `OidcIamAdapterLayer` contra mock OIDC local | stub en pec-engine                        | `IAM_MODE=oidc-local`         |
+| TS09        | `OidcIamAdapterLayer`                        | `AuthorizationServiceReal` de rbac-engine | AppLayer de pec con rbac real |
+| Producción  | `OidcIamAdapterLayer` contra Entra ID        | `AuthorizationServiceReal`                | `NODE_ENV=production`         |
 
 ---
 
@@ -211,7 +207,7 @@ El mock OIDC vive en el `docker-compose.yml` de `skeleton-rbac`. Los desarrollad
 services:
   rbac-engine:
     build: .
-    ports: ["3001:3001"]
+    ports: ['3001:3001']
     depends_on: [postgres, mock-oidc]
 
   postgres:
@@ -219,7 +215,7 @@ services:
 
   mock-oidc:
     image: ghcr.io/navikt/mock-oauth2-server:2
-    ports: ["8080:8080"]
+    ports: ['8080:8080']
     volumes:
       - ./docker/mock-oidc/oidc-config.json:/config/oidc-config.json
 ```
@@ -230,11 +226,11 @@ Una App Registration representa una **identidad de servicio**, no una instancia 
 
 #### 8.1. Registros de producción (estáticos en `AgentRegistry`)
 
-| App Registration | `agentType` | `operation` | Entrada en `AgentRegistry` |
-|---|---|---|---|
-| `pec2-job-pdn-pag-001` | `BatchJob` | `PDN-PAG-001` | Sí |
-| `pec2-job-pdn-mon-005` | `BatchJob` | `PDN-MON-005` | Sí |
-| `pec2-external-empleador` | `ExternalSystem` | `empleador-api` | Sí |
+| App Registration          | `agentType`      | `operation`     | Entrada en `AgentRegistry` |
+| ------------------------- | ---------------- | --------------- | -------------------------- |
+| `pec2-job-pdn-pag-001`    | `BatchJob`       | `PDN-PAG-001`   | Sí                         |
+| `pec2-job-pdn-mon-005`    | `BatchJob`       | `PDN-MON-005`   | Sí                         |
+| `pec2-external-empleador` | `ExternalSystem` | `empleador-api` | Sí                         |
 
 Cada job de producción tiene su propia App Registration porque sus capacidades son distintas y el cambio requiere code review + deploy. Son pocos registros — uno por tipo de job, no uno por instancia.
 
@@ -242,9 +238,9 @@ Cada job de producción tiene su propia App Registration porque sus capacidades 
 
 Para los agentes AFK del backlog (TS01–TS19) **basta con una sola App Registration en Entra ID**:
 
-| App Registration | `agentType` | Uso |
-|---|---|---|
-| `pec2-agent-afk-dev` | `AFK` | Todos los agentes AFK que ejecutan TSs en dev |
+| App Registration     | `agentType` | Uso                                           |
+| -------------------- | ----------- | --------------------------------------------- |
+| `pec2-agent-afk-dev` | `AFK`       | Todos los agentes AFK que ejecutan TSs en dev |
 
 La granularidad por TS se controla en la tabla `dev_agent_sessions`, no en Entra ID:
 
@@ -263,10 +259,10 @@ El AFK solicita un token con ese scope, ejecuta el TS, la sesión expira. Para T
 
 Si en el futuro se necesita separar capacidades entre AFK de infraestructura y AFK de dominio, se crean dos registros:
 
-| App Registration | Scope | Capacidades |
-|---|---|---|
-| `pec2-agent-afk-infra` | TS01–TS03, TS18–TS19 | bootstrap, migrations, observabilidad |
-| `pec2-agent-afk-domain` | TS06–TS17 | calculo, prestacion, liquidacion, marco |
+| App Registration        | Scope                | Capacidades                             |
+| ----------------------- | -------------------- | --------------------------------------- |
+| `pec2-agent-afk-infra`  | TS01–TS03, TS18–TS19 | bootstrap, migrations, observabilidad   |
+| `pec2-agent-afk-domain` | TS06–TS17            | calculo, prestacion, liquidacion, marco |
 
 Por ahora un solo registro es suficiente para el backlog completo.
 
@@ -284,12 +280,12 @@ No requiere tocar `rbac-contracts`, el middleware ni el motor de cálculo.
 
 ## Alternativas descartadas
 
-| Alternativa | Razón |
-|---|---|
-| RBAC como workspace dentro de skeleton-pec | Ciclos de release independientes. Mezclarlos acopla versiones y complica deploys individuales. |
-| RBAC como microservicio HTTP (sidecar) | ADR-006 lo descartó: latencia por cada verificación de capacidad + contratos de red propios. |
-| `TokenClaims` e `IamAdapter` en rbac-contracts | Expondría infraestructura OIDC a la SPA y a pec-engine sin utilidad. Son internos del engine. |
-| `AppAuditWriterService` Tag en pec-contracts | Auth es dominio de rbac. El Tag de auditoría de auth vive en rbac-contracts; pec-engine lo consume igual que consume `AuthorizationService`. |
+| Alternativa                                    | Razón                                                                                                                                        |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| RBAC como workspace dentro de skeleton-pec     | Ciclos de release independientes. Mezclarlos acopla versiones y complica deploys individuales.                                               |
+| RBAC como microservicio HTTP (sidecar)         | ADR-006 lo descartó: latencia por cada verificación de capacidad + contratos de red propios.                                                 |
+| `TokenClaims` e `IamAdapter` en rbac-contracts | Expondría infraestructura OIDC a la SPA y a pec-engine sin utilidad. Son internos del engine.                                                |
+| `AppAuditWriterService` Tag en pec-contracts   | Auth es dominio de rbac. El Tag de auditoría de auth vive en rbac-contracts; pec-engine lo consume igual que consume `AuthorizationService`. |
 
 ---
 
@@ -313,13 +309,13 @@ export const findAgentRegistration = (
   environment: string
 ): AgentRegistration | undefined => {
   // primero el registro estático — gana en caso de conflicto
-  const staticEntry = staticRegistry.find(r => r.entraClientId === agentId)
+  const staticEntry = staticRegistry.find((r) => r.entraClientId === agentId)
   if (staticEntry) return staticEntry
 
   // solo en dev: busca en tabla dinámica
-  if (environment === "dev") return devSessionRegistry.find(agentId)
+  if (environment === 'dev') return devSessionRegistry.find(agentId)
 
-  return undefined   // sin entrada → cero capacidades
+  return undefined // sin entrada → cero capacidades
 }
 ```
 
@@ -344,6 +340,7 @@ create index dev_agent_sessions_agent_id_idx on dev_agent_sessions (agent_id)
 ```
 
 **Reglas:**
+
 - Solo se puede crear con `environment = "dev"` en el token del creador.
 - `capabilities` es subconjunto de las capacidades dev definidas en `rbac_humano_agente.md` sección 3.4 — no puede excederlas.
 - `expires_at` máximo 8 horas. Un Admin Gobernanza puede revocar antes.
@@ -369,6 +366,7 @@ Token TS-001-05 (diferente token):
 ```
 
 **Por qué no un token de sesión abierta con `operation: "*"`:**
+
 - En `app_audit` quedaría `operation: "*"` — inauditable. No se puede reconstruir qué TS causó qué acción.
 - Si el agente tiene permisos amplios y comete un error en TS-001-05, no se puede saber si el daño vino de ese TS o del anterior.
 
@@ -379,8 +377,8 @@ El `dev_agent_sessions` tiene `operation: "TS-001-04"`. El agente solicita su to
 ```typescript
 // rbac-contracts — operationScope en el subject
 export type OperationScope = {
-  readonly operation: string        // "TS-001-04" — nunca "*" en audit
-  readonly environment: "dev" | "staging" | "prod"
+  readonly operation: string // "TS-001-04" — nunca "*" en audit
+  readonly environment: 'dev' | 'staging' | 'prod'
 }
 ```
 
@@ -432,6 +430,7 @@ create table hitl_delegations (
 ```
 
 **Reglas:**
+
 - `allowed_capabilities` solo puede contener capacidades de lectura (`*:consultar`, `incidente:consultar`, `auditoria:leer-*`). La constraint impide delegar escritura o aprobación.
 - Un HITL no puede tener capacidades que el humano delegante no tiene (el servicio verifica `delegatedBy.capabilities ⊇ allowed_capabilities`).
 - El HITL solo puede acceder a los `resourceId` listados en `allowed_resources` — `requireRelation` verifica contra esta tabla.
@@ -473,15 +472,15 @@ create table hitl_delegations (
 
 `rbac-contracts` vive en un repo separado de sus consumidores (`skeleton-pec`, `skeleton-rbac-front`). Un cambio en el contrato puede romper compilación en múltiples repos. La siguiente tabla define qué tipo de cambio corresponde a qué bump de versión:
 
-| Cambio | Semver | Impacto en consumidores |
-|---|---|---|
-| Agregar un valor nuevo a `Capability` | `patch` | Ninguno — los consumidores ignoran los valores que no usan |
-| Agregar campo **opcional** a `AccessContext`, `Subject` o `RelationContext` | `minor` | Ninguno — TypeScript acepta campos extra |
-| Agregar campo **requerido** a cualquier tipo | **`major`** | Rompe compilación en todos los consumidores |
-| Renombrar o eliminar un valor de `Capability` | **`major`** | Rompe compilación donde ese valor se referencia |
-| Renombrar o eliminar un campo existente | **`major`** | Ídem |
-| Cambiar el tipo de un campo existente | **`major`** | Ídem |
-| Agregar un método a `AuthorizationService` | **`major`** | Rompe todas las implementaciones (stubs en pec-engine incluidos) |
+| Cambio                                                                      | Semver      | Impacto en consumidores                                          |
+| --------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------- |
+| Agregar un valor nuevo a `Capability`                                       | `patch`     | Ninguno — los consumidores ignoran los valores que no usan       |
+| Agregar campo **opcional** a `AccessContext`, `Subject` o `RelationContext` | `minor`     | Ninguno — TypeScript acepta campos extra                         |
+| Agregar campo **requerido** a cualquier tipo                                | **`major`** | Rompe compilación en todos los consumidores                      |
+| Renombrar o eliminar un valor de `Capability`                               | **`major`** | Rompe compilación donde ese valor se referencia                  |
+| Renombrar o eliminar un campo existente                                     | **`major`** | Ídem                                                             |
+| Cambiar el tipo de un campo existente                                       | **`major`** | Ídem                                                             |
+| Agregar un método a `AuthorizationService`                                  | **`major`** | Rompe todas las implementaciones (stubs en pec-engine incluidos) |
 
 **Reglas operativas:**
 

@@ -60,14 +60,14 @@ El `skeleton-rbac` implementa el **servicio de autorización** como un paquete i
 
 ### 2.1. Actores que se autentican
 
-| Actor | Tipo de Subject | Método de auth | Provider |
-|---|---|---|---|
-| Analista, Supervisor, Operador Pagos, Admin Gobernanza, Auditor | `HumanSubject` | OIDC Authorization Code + PKCE | Entra ID |
-| Jobs batch (PDN-PAG-001, PDN-MON-005/006) | `AgentSubject` (BatchJob) | OAuth2 Client Credentials | Entra ID (app registration) |
-| Agente AFK (Claude Code) | `AgentSubject` (AFK) | Client Credentials con scope limitado a dev | Entra ID, mock OIDC o stub |
-| Agente HITL | `AgentSubject` (HITL) | Client Credentials + `invokedBy` claim | Entra ID |
-| Empleador (externo) | `ExternalSubject` | API Key | Gateway (no Entra ID) |
-| Sistema Externo (IPS, SIVEGAM) | `AgentSubject` (ExternalSystem) | Client Credentials o API Key | Entra ID o Gateway |
+| Actor                                                           | Tipo de Subject                 | Método de auth                              | Provider                    |
+| --------------------------------------------------------------- | ------------------------------- | ------------------------------------------- | --------------------------- |
+| Analista, Supervisor, Operador Pagos, Admin Gobernanza, Auditor | `HumanSubject`                  | OIDC Authorization Code + PKCE              | Entra ID                    |
+| Jobs batch (PDN-PAG-001, PDN-MON-005/006)                       | `AgentSubject` (BatchJob)       | OAuth2 Client Credentials                   | Entra ID (app registration) |
+| Agente AFK (Claude Code)                                        | `AgentSubject` (AFK)            | Client Credentials con scope limitado a dev | Entra ID, mock OIDC o stub  |
+| Agente HITL                                                     | `AgentSubject` (HITL)           | Client Credentials + `invokedBy` claim      | Entra ID                    |
+| Empleador (externo)                                             | `ExternalSubject`               | API Key                                     | Gateway (no Entra ID)       |
+| Sistema Externo (IPS, SIVEGAM)                                  | `AgentSubject` (ExternalSystem) | Client Credentials o API Key                | Entra ID o Gateway          |
 
 ### 2.2. Flujo HTTP (humano)
 
@@ -116,24 +116,24 @@ Ciclo de procesamiento
 
 ### 3.1. Claims esperados en el JWT
 
-| Claim | Tipo | Ejemplo | Mapeo |
-|---|---|---|---|
-| `oid` | string (GUID) | `a1b2c3d4-...` | `HumanSubject.userId` |
-| `email` | string | `analista@achs.cl` | `HumanSubject.email` |
-| `groups` | string[] | `["achs-analistas", "achs-supervisores"]` | `BusinessRole` (vía tabla de mapeo) |
-| `extension_orgUnit` | string | `"RM-Norte"` | `HumanSubject.orgUnit` |
-| `appId` / `azp` | string (GUID) | `app-reg-pdn-pag-001` | `AgentSubject.agentId` |
-| `roles` | string[] | `["liquidacion:calcular", "liquidacion:ejecutar-cierre", "job:ejecutar-ciclo-pago"]` | Grants externos, intersectados con `AgentRegistry` |
+| Claim               | Tipo          | Ejemplo                                                                              | Mapeo                                              |
+| ------------------- | ------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------- |
+| `oid`               | string (GUID) | `a1b2c3d4-...`                                                                       | `HumanSubject.userId`                              |
+| `email`             | string        | `analista@achs.cl`                                                                   | `HumanSubject.email`                               |
+| `groups`            | string[]      | `["achs-analistas", "achs-supervisores"]`                                            | `BusinessRole` (vía tabla de mapeo)                |
+| `extension_orgUnit` | string        | `"RM-Norte"`                                                                         | `HumanSubject.orgUnit`                             |
+| `appId` / `azp`     | string (GUID) | `app-reg-pdn-pag-001`                                                                | `AgentSubject.agentId`                             |
+| `roles`             | string[]      | `["liquidacion:calcular", "liquidacion:ejecutar-cierre", "job:ejecutar-ciclo-pago"]` | Grants externos, intersectados con `AgentRegistry` |
 
 ### 3.2. Tabla de mapeo: grupo Entra ID → BusinessRole
 
-| Grupo Entra ID | BusinessRole |
-|---|---|
-| `achs-analistas` | `analista` |
-| `achs-supervisores` | `supervisor` |
-| `achs-operadores-pago` | `operador_pagos` |
+| Grupo Entra ID          | BusinessRole       |
+| ----------------------- | ------------------ |
+| `achs-analistas`        | `analista`         |
+| `achs-supervisores`     | `supervisor`       |
+| `achs-operadores-pago`  | `operador_pagos`   |
 | `achs-admin-gobernanza` | `admin_gobernanza` |
-| `achs-auditores` | `auditor` |
+| `achs-auditores`        | `auditor`          |
 
 ### 3.3. Tabla de mapeo: BusinessRole → CapabilitySet
 
@@ -194,6 +194,7 @@ agente-hitl-<operacion>       → AgentSubject (HITL)
 ```
 
 Ejemplos:
+
 - `analista-rm-norte` → Analista, orgUnit=RM-Norte, todas las caps de analista
 - `supervisor-full` → Supervisor, orgUnit=*, todas las caps de supervisor
 - `operador-pagos` → Operador Pagos, caps de liquidación
@@ -269,11 +270,11 @@ El engine (`skeleton-pec`) consume este paquete como dependencia:
 
 ```typescript
 // En el engine: app-context.ts
-import { RbacLayer } from "@achs/rbac"
+import { RbacLayer } from '@achs/rbac'
 
 // Reemplaza AuthorizationServiceStub con RbacLayer
 export const AppLayer = Layer.mergeAll(
-  RbacLayer,              // ← reemplaza AuthorizationServiceStub
+  RbacLayer, // ← reemplaza AuthorizationServiceStub
   FrameworkResolverStub,
   IndicadoresServiceStub,
   OutboxWriterStub
@@ -286,13 +287,13 @@ La migración es swapping de Layers: el engine no cambia su código de dominio, 
 
 ## 8. Preguntas abiertas
 
-| # | Pregunta | Quien responde | Impacto |
-|---|---|---|---|
-| 1 | ¿Entra ID expone `extension_orgUnit` hoy o hay que extender el schema? | IT / Seguridad ACHS | Define si `orgUnit` está disponible en dev o solo en prod |
-| 2 | ¿Los grupos de Entra ID (`achs-analistas`, etc.) ya existen o hay que crearlos? | IT / Seguridad ACHS | Define el esfuerzo de setup de Entra ID |
-| 3 | ¿Las app registrations para los jobs batch ya están creadas? | IT / Seguridad ACHS | Define si el flow client credentials funciona en dev |
-| 4 | ¿El gateway (proxy reverso) ya maneja API keys para sistemas externos? | Arquitectura / IT | Define el scope del adapter de ExternalSubject |
-| 5 | ¿Hay un tenant de desarrollo separado (`achsdev`) o se usa el productivo con apps de prueba? | IT / Seguridad ACHS | Define la configuración OIDC de dev |
+| #   | Pregunta                                                                                     | Quien responde      | Impacto                                                   |
+| --- | -------------------------------------------------------------------------------------------- | ------------------- | --------------------------------------------------------- |
+| 1   | ¿Entra ID expone `extension_orgUnit` hoy o hay que extender el schema?                       | IT / Seguridad ACHS | Define si `orgUnit` está disponible en dev o solo en prod |
+| 2   | ¿Los grupos de Entra ID (`achs-analistas`, etc.) ya existen o hay que crearlos?              | IT / Seguridad ACHS | Define el esfuerzo de setup de Entra ID                   |
+| 3   | ¿Las app registrations para los jobs batch ya están creadas?                                 | IT / Seguridad ACHS | Define si el flow client credentials funciona en dev      |
+| 4   | ¿El gateway (proxy reverso) ya maneja API keys para sistemas externos?                       | Arquitectura / IT   | Define el scope del adapter de ExternalSubject            |
+| 5   | ¿Hay un tenant de desarrollo separado (`achsdev`) o se usa el productivo con apps de prueba? | IT / Seguridad ACHS | Define la configuración OIDC de dev                       |
 
 ---
 
