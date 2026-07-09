@@ -124,11 +124,13 @@ jobs:
         id: push_staging
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          STAGING_IMAGE="ghcr.io/${{ github.repository_owner }}/pec-rbac:v${VERSION}-staging"
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          STAGING_IMAGE="ghcr.io/${OWNER}/pec-rbac:v${VERSION}-staging"
           docker tag pec-rbac:${{ github.sha }} "${STAGING_IMAGE}"
           docker push "${STAGING_IMAGE}"
           echo "staging_image=${STAGING_IMAGE}" >> $GITHUB_OUTPUT
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "owner=${OWNER}" >> $GITHUB_OUTPUT
 
       # ── pdeployt3: Gates de staging — k6 smoke contra contenedor GHCR ──
       - name: k6 smoke contra contenedor staging
@@ -148,7 +150,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         run: |
           VERSION=${{ steps.push_staging.outputs.version }}
-          OWNER="${{ github.repository_owner }}"
+          OWNER=${{ steps.push_staging.outputs.owner }}
           docker tag pec-rbac:${{ github.sha }} "ghcr.io/${OWNER}/pec-rbac:v${VERSION}"
           docker tag pec-rbac:${{ github.sha }} "ghcr.io/${OWNER}/pec-rbac:latest"
           docker push "ghcr.io/${OWNER}/pec-rbac:v${VERSION}"
@@ -160,7 +162,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION=${{ steps.push_staging.outputs.version }}
-          OWNER="${{ github.repository_owner }}"
+          OWNER=${{ steps.push_staging.outputs.owner }}
           TAG="v${VERSION}"
           git config user.email "ci@github.com"
           git config user.name "GitHub Actions"
