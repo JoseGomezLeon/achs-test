@@ -116,3 +116,47 @@ Los frameworks como AdonisJS generan workflows de CI automáticamente (ej: `play
 
 ❌ Deshabilitar con `workflow_dispatch` — el PR sigue mostrando el último run fallido
 ✅ Eliminar el archivo — el check desaparece del PR en el siguiente push
+
+### AdonisJS + Inertia — ruta `/health` obligatoria en CI (Integración Continua)
+
+La ruta raíz `GET /` usa Inertia, que requiere el manifiesto de Vite (frontend compilado). En CI sin build de frontend, el servidor arranca pero responde 500 en todas las peticiones. `wait-on` y k6 fallan en silencio.
+
+**Regla:** todo proyecto AdonisJS + Inertia debe tener una ruta `/health` que devuelva JSON puro desde el primer día.
+
+```ts
+// start/routes.ts
+router.get('/health', ({ response }) => response.json({ status: 'ok' }))
+```
+
+En los workflows de CI, apuntar `wait-on` y los smoke tests de k6 a `/health`, nunca a `/`.
+
+### Servidores en background en CI — usar `nohup`
+
+En GitHub Actions (Acciones de GitHub), cada bloque `run:` corre en un shell separado. Los procesos lanzados con `&` reciben SIGHUP (señal de cierre de terminal) cuando ese shell termina. El proceso muere silenciosamente: el paso siguiente encuentra el puerto vacío.
+
+**Regla:** todo servidor que deba sobrevivir entre pasos de CI debe arrancarse con `nohup`:
+
+```bash
+nohup npx tsx bin/server.ts > /tmp/server.log 2>&1 &
+echo $! > /tmp/server.pid
+npx wait-on http://localhost:3333/health --timeout 60000
+```
+
+Imprimir `/tmp/server.log` en el paso de cleanup para facilitar debugging:
+```bash
+kill $(cat /tmp/server.pid) 2>/dev/null || true
+cat /tmp/server.log | tail -20 || true
+```
+
+### AdonisJS + Inertia — `tsconfig.json` raíz debe usar `react-jsx`
+
+El scaffold de AdonisJS + Inertia genera páginas React con el nuevo transform (React 17+) que NO requieren `import React from 'react'` en cada archivo. Si el `tsconfig.json` raíz tiene `"jsx": "react"` (transform antiguo), `tsx ace build` falla durante el Docker build.
+
+**Regla:** usar `"jsx": "react-jsx"` en el `tsconfig.json` raíz desde el inicio. El backend no tiene archivos `.tsx`, así que el cambio no tiene costo.
+
+```json
+// tsconfig.json
+"compilerOptions": {
+  "jsx": "react-jsx"
+}
+```
