@@ -24,3 +24,8 @@ yarn-error.log
 
 # Platform specific
 .DS_Store
+
+# Test artifacts
+allure-results/
+allure-report/
+coverage/

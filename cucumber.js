@@ -7,7 +7,7 @@ export default {
     ],
     paths: ['tests/bdd/features/**/*.feature'],
     loader: ['tsx'],
-    format: ['progress-bar', 'html:allure-results/cucumber-report.html'],
+    format: ['progress-bar', 'allure-cucumberjs/reporter'],
     formatOptions: { snippetInterface: 'async-await' },
     publishQuiet: true,
   },
