@@ -72,7 +72,7 @@ jobs:
         run: |
           npx tsx bin/server.ts &
           echo $! > /tmp/server.pid
-          npx wait-on http://localhost:3333 --timeout 30000
+          npx wait-on http://localhost:3333/health --timeout 30000
 
       - name: k6 — smoke test GET / (30s · 1 VU · p95 < 500ms)
         run: k6 run tests/performance/k6-load.js

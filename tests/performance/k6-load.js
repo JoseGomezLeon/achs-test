@@ -22,11 +22,10 @@ export const options = {
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:3333'
 
 export default function () {
-  // GET /
-  const res = http.get(`${BASE_URL}/`)
+  const res = http.get(`${BASE_URL}/health`)
   const ok = check(res, {
-    'GET / → 200': (r) => r.status === 200,
-    'GET / < 500ms': (r) => r.timings.duration < 500,
+    'GET /health → 200': (r) => r.status === 200,
+    'GET /health < 500ms': (r) => r.timings.duration < 500,
   })
   errorRate.add(!ok)
   latencyHome.add(res.timings.duration)
