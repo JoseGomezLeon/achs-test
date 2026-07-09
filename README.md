@@ -160,3 +160,27 @@ El scaffold de AdonisJS + Inertia genera páginas React con el nuevo transform (
   "jsx": "react-jsx"
 }
 ```
+
+### AdonisJS + Inertia — anotar `errors` en el scaffold de autenticación
+
+El scaffold genera páginas `login.tsx` y `signup.tsx` donde el render prop de `Form` desestructura `errors` sin tipo explícito. Con `strict: true` o `noImplicitAny`, TypeScript lanza TS7031 durante el Docker build.
+
+**Regla:** al recibir el scaffold, anotar inmediatamente los archivos `inertia/pages/auth/login.tsx` y `inertia/pages/auth/signup.tsx`:
+
+```tsx
+{({ errors }: { errors: Record<string, string> }) => (
+  // ...
+)}
+```
+
+`Record<string, string>` es el tipo estándar de errores de validación en AdonisJS/Inertia.
+
+### AdonisJS + Inertia — Dockerfile: `public/` no existe en clone limpio
+
+`tsx ace build` coloca los assets del frontend (JS, CSS compilados por Vite) en `build/public/`, no en `public/`. La carpeta `public/` raíz solo existe para archivos estáticos manuales (favicon, etc.). En un clone limpio sin esos archivos, el directorio no existe y el Docker build multi-stage falla al intentar copiarlo.
+
+**Regla:** añadir `&& mkdir -p public` al step de build en el Dockerfile:
+
+```dockerfile
+RUN npm run build && mkdir -p public
+```
