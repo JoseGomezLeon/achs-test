@@ -104,3 +104,15 @@ Antes de iniciar cada fase, levantar el visor correspondiente como paso `t0`:
 ### Alternativa Azure DevOps
 
 En toda fase CI/CD documentar siempre el equivalente en Azure DevOps (pipelines, PR, deploy) como bloque alternativo después del procedimiento GitHub. El piloto usa GitHub Actions; el deploy real será en Azure DevOps.
+
+### Workflows del scaffold — eliminar antes de crear el pipeline CI
+
+Los frameworks como AdonisJS generan workflows de CI automáticamente (ej: `playwright.yml`). Estos workflows:
+- No tienen variables de entorno configuradas para CI
+- Fallan en el primer push y envían notificaciones de error al correo
+- Contaminan el PR con checks fallidos que no se pueden sobreescribir
+
+**Regla:** al iniciar p7, lo primero es **eliminar todos los workflows del scaffold** del directorio `.github/workflows/`. Recrear solo los que corresponden al pipeline diseñado para el proyecto.
+
+❌ Deshabilitar con `workflow_dispatch` — el PR sigue mostrando el último run fallido
+✅ Eliminar el archivo — el check desaparece del PR en el siguiente push
