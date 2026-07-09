@@ -4,16 +4,20 @@ on:
   schedule:
     - cron: '0 2 * * *'   # nightly 02:00 UTC
   workflow_dispatch:       # disparo manual para pruebas
-
+  pull_request:            # temporal — validar pdeploy en feature branch; remover al hacer merge
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   nivel2:
-    name: BDD + Docker build + k6 + SemVer
+    name: BDD + Docker build + k6 + Deploy
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 75
+
+    permissions:
+      contents: write    # para crear tags y releases
+      packages: write    # para push a GHCR (GitHub Container Registry)
 
     env:
       NODE_ENV: test
@@ -108,10 +112,61 @@ jobs:
           curl -f http://localhost:3334/health || (docker logs pec-rbac-test && exit 1)
           docker stop pec-rbac-test
 
-      # ── SemVer tag en release ──────────────────────────────────────
-      - name: Tag SemVer en release
-        if: github.event_name == 'workflow_dispatch'
+      # ── pdeployt1 + pdeployt2: Deploy a GHCR (staging) ────────────────
+      - name: Login a GHCR (GitHub Container Registry)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push imagen a GHCR — tag staging
+        id: push_staging
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          echo "Version: $VERSION"
-          git tag -a "v${VERSION}-ci-$(date +%Y%m%d)" -m "CI Nivel 2 release" || true
+          STAGING_IMAGE="ghcr.io/${{ github.repository_owner }}/pec-rbac:v${VERSION}-staging"
+          docker tag pec-rbac:${{ github.sha }} "${STAGING_IMAGE}"
+          docker push "${STAGING_IMAGE}"
+          echo "staging_image=${STAGING_IMAGE}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      # ── pdeployt3: Gates de staging — k6 smoke contra contenedor GHCR ──
+      - name: k6 smoke contra contenedor staging
+        run: |
+          docker run -d --name pec-rbac-staging \
+            -e NODE_ENV=test -e PORT=3335 -e HOST=0.0.0.0 \
+            -e LOG_LEVEL=warn -e APP_KEY=test-key-32-chars-minimum-here \
+            -e APP_URL=http://localhost:3335 -e SESSION_DRIVER=memory \
+            -e DB_CONNECTION=sqlite -e DB_DATABASE=':memory:' \
+            -p 3335:3335 ${{ steps.push_staging.outputs.staging_image }}
+          npx wait-on http://localhost:3335/health --timeout 30000
+          BASE_URL=http://localhost:3335 k6 run tests/performance/k6-load.js
+          docker stop pec-rbac-staging
+
+      # ── pdeployt4: Deploy a producción — :latest + GitHub Release ──────
+      - name: Push imagen de producción (:latest + SemVer)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          VERSION=${{ steps.push_staging.outputs.version }}
+          OWNER="${{ github.repository_owner }}"
+          docker tag pec-rbac:${{ github.sha }} "ghcr.io/${OWNER}/pec-rbac:v${VERSION}"
+          docker tag pec-rbac:${{ github.sha }} "ghcr.io/${OWNER}/pec-rbac:latest"
+          docker push "ghcr.io/${OWNER}/pec-rbac:v${VERSION}"
+          docker push "ghcr.io/${OWNER}/pec-rbac:latest"
+
+      - name: GitHub Release + tag SemVer
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=${{ steps.push_staging.outputs.version }}
+          OWNER="${{ github.repository_owner }}"
+          TAG="v${VERSION}"
+          git config user.email "ci@github.com"
+          git config user.name "GitHub Actions"
+          git tag -a "${TAG}" -m "Release ${TAG}" 2>/dev/null || echo "Tag already exists"
+          git push origin "${TAG}" 2>/dev/null || echo "Tag already pushed"
+          gh release create "${TAG}" \
+            --title "Release ${TAG}" \
+            --notes "Imagen Docker: ghcr.io/${OWNER}/pec-rbac:${TAG}" \
+            2>/dev/null || echo "Release already exists"
