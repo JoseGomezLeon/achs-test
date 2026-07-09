@@ -175,6 +175,21 @@ El scaffold genera páginas `login.tsx` y `signup.tsx` donde el render prop de `
 
 `Record<string, string>` es el tipo estándar de errores de validación en AdonisJS/Inertia.
 
+### GHCR (GitHub Container Registry) — nombres de imagen deben ser lowercase
+
+`${{ github.repository_owner }}` retorna el nombre del usuario/org con la capitalización original (ej: `JoseGomezLeon`). Docker requiere que todos los componentes del nombre de imagen sean minúsculas. El push falla con `invalid reference format: repository name must be lowercase`.
+
+**Regla:** siempre convertir el owner a minúsculas antes de usarlo en una URL de imagen Docker:
+
+```bash
+OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+IMAGE="ghcr.io/${OWNER}/mi-imagen:tag"
+```
+
+Aplica a cualquier acción de push a GHCR, ECR, o cualquier registry que exponga el nombre del repo en la URL.
+
+---
+
 ### AdonisJS + Inertia — Dockerfile: `public/` no existe en clone limpio
 
 `tsx ace build` coloca los assets del frontend (JS, CSS compilados por Vite) en `build/public/`, no en `public/`. La carpeta `public/` raíz solo existe para archivos estáticos manuales (favicon, etc.). En un clone limpio sin esos archivos, el directorio no existe y el Docker build multi-stage falla al intentar copiarlo.
