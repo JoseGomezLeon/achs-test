@@ -1,9 +1,8 @@
 name: Playwright Tests
+# Deshabilitado — E2E en CI se implementa en p8 (Pipeline CI Nivel 2)
+# Requiere variables de entorno (APP_KEY, NODE_ENV, etc.) que se configuran en p8
 on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
+  workflow_dispatch:
 jobs:
   test:
     timeout-minutes: 60
