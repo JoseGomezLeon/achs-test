@@ -148,6 +148,9 @@ jobs:
       - name: Instalar Playwright + Chromium
         run: npx playwright install chromium --with-deps
 
+      - name: Build para E2E (el Docker build crea la imagen pero no deja archivos en el runner)
+        run: npm run build
+
       - name: Preparar BD (base de datos) SQLite para E2E (extremo a extremo)
         run: mkdir -p build/tmp && node build/ace.js migration:run
         env:
