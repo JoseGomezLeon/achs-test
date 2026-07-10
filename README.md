@@ -175,6 +175,84 @@ El scaffold genera páginas `login.tsx` y `signup.tsx` donde el render prop de `
 
 `Record<string, string>` es el tipo estándar de errores de validación en AdonisJS/Inertia.
 
+### Playwright en CI — `build/` no existe en el runner cuando se usa Docker build
+
+El paso `docker build` crea una **imagen Docker**, no deja archivos compilados en el filesystem del runner. Si después se necesita el servidor compilado para correr tests E2E (Extremo a Extremo) con Playwright, hay que agregar un paso explícito de `npm run build` antes.
+
+**Regla:** en workflows que usan tanto Docker build como Playwright E2E, agregar `npm run build` antes de los pasos de E2E:
+
+```yaml
+- name: Build para E2E
+  run: npm run build
+- name: Preparar BD para E2E
+  run: mkdir -p build/tmp && node build/ace.js migration:run
+```
+
+---
+
+### Playwright en CI — `executablePath` de Chrome debe ser condicional
+
+En máquinas locales con Chrome instalado, se puede especificar `executablePath: '/usr/bin/google-chrome'`. En CI (Integración Continua), después de `npx playwright install chromium --with-deps`, Playwright instala Chromium en su propio cache — no en `/usr/bin/google-chrome`. Pasar un path fijo rompe CI.
+
+**Regla:** hacer el `executablePath` condicional:
+
+```typescript
+launchOptions: {
+  executablePath: process.env.CI ? undefined : '/usr/bin/google-chrome',
+},
+```
+
+---
+
+### AdonisJS + Inertia — nohup deja procesos hijo vivos después del kill del PID
+
+Al matar el servidor con `kill $(cat /tmp/server.pid)`, el proceso padre muere pero los procesos hijo de `npx tsx` (el proceso real del servidor) pueden seguir corriendo y manteniendo el puerto ocupado. Playwright falla con "address already in use".
+
+**Regla:** antes de iniciar el webServer de Playwright, liberar el puerto explícitamente:
+
+```yaml
+- name: Liberar puerto antes de E2E
+  run: lsof -ti:3333 | xargs kill -9 2>/dev/null || true
+```
+
+---
+
+### AdonisJS + Inertia — auth middleware no redirige en rutas no-Inertia
+
+El middleware `auth()` de AdonisJS lanza `E_UNAUTHORIZED_ACCESS` cuando el usuario no está autenticado. Para rutas Inertia, el exception handler lo convierte en redirect a `/login`. Para rutas con respuesta HTML pura (sin Inertia), el handler puede responder en el mismo URL en vez de redirigir.
+
+**Regla:** en rutas no-Inertia con acceso protegido, agregar verificación explícita:
+
+```typescript
+router.get('/mi-ruta', async ({ auth, response }) => {
+  if (!(await auth.check())) {
+    return response.redirect('/login')
+  }
+  const user = auth.user!
+  // ...
+})
+```
+
+---
+
+### Playwright E2E con servidor compilado — usar `NODE_ENV=production`
+
+El servidor compilado (`node build/bin/server.js`) en modo `NODE_ENV=development` intenta conectarse al Vite dev server para servir los assets del frontend. En CI no hay Vite dev server corriendo, así que las páginas React no renderizan y Playwright no puede encontrar los elementos.
+
+**Regla:** para E2E contra el servidor compilado, usar siempre `NODE_ENV=production`:
+
+```yaml
+- name: E2E Playwright
+  run: npx playwright test
+  env:
+    NODE_ENV: production
+    SESSION_DRIVER: cookie
+```
+
+Con `NODE_ENV=production`, el servidor sirve los assets estáticos desde `build/public/assets/` (generados por `npm run build`).
+
+---
+
 ### GHCR (GitHub Container Registry) — nombres de imagen deben ser lowercase
 
 `${{ github.repository_owner }}` retorna el nombre del usuario/org con la capitalización original (ej: `JoseGomezLeon`). Docker requiere que todos los componentes del nombre de imagen sean minúsculas. El push falla con `invalid reference format: repository name must be lowercase`.
