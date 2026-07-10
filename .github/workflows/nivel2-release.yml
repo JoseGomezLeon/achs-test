@@ -157,6 +157,9 @@ jobs:
           NODE_ENV: development
           SESSION_DRIVER: cookie
 
+      - name: Liberar puerto 3333 antes de E2E (procesos hijo de npx tsx sobreviven al kill del PID)
+        run: lsof -ti:3333 | xargs kill -9 2>/dev/null || true
+
       - name: E2E Playwright — 20 escenarios RBAC (Control de Acceso Basado en Roles)
         run: npx playwright test tests/e2e/rbac/rbac-acceso.spec.ts --reporter=list
         env:
