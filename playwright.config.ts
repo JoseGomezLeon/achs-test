@@ -1,31 +1,32 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
-  testDir: './tests',
-  /* Run tests in files in parallel */
+  testDir: './tests/e2e',
   fullyParallel: true,
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
+  reporter: [['html'], ['allure-playwright']],
   use: {
-    /* Base URL to use in actions like `await page.goto('')`. */
-    // baseURL: 'http://localhost:3000',
-
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
+    baseURL: 'http://localhost:3333',
     trace: 'on-first-retry',
+    launchOptions: {
+      // Localmente usa Chrome del sistema; en CI (Integración Continua) Playwright usa su propio Chromium
+      executablePath: process.env.CI ? undefined : '/usr/bin/google-chrome',
+      args: process.env.CI ? ['--no-sandbox', '--disable-setuid-sandbox'] : [],
+    },
+  },
+  webServer: {
+    // En CI (Integración Continua) usa el servidor compilado; localmente usa tsx directo
+    command: process.env.CI ? 'node build/bin/server.js' : 'npx tsx bin/server.ts',
+    url: 'http://localhost:3333/health',
+    reuseExistingServer: !process.env.CI,
+    timeout: 60_000,
   },
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-    }
-
+    },
   ],
-
-});
+})

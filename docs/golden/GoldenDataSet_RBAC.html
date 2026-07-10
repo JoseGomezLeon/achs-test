@@ -1,0 +1,2607 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Golden Dataset RBAC — Control de Acceso Modular</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 13px;
+        background: #f1f5f9;
+        color: #0f172a;
+      }
+      header {
+        background: #0f172a;
+        color: #fff;
+        padding: 16px 24px;
+        border-bottom: 3px solid #6366f1;
+      }
+      header h1 {
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+      }
+      header p {
+        font-size: 11px;
+        color: #94a3b8;
+        margin-top: 3px;
+      }
+      .controls {
+        padding: 10px 24px;
+        background: #fff;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      }
+      .controls label {
+        font-size: 11px;
+        color: #64748b;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      select,
+      input[type='text'] {
+        border: 1px solid #e2e8f0;
+        border-radius: 5px;
+        padding: 5px 8px;
+        font-size: 12px;
+        background: #fff;
+        color: #0f172a;
+      }
+      input[type='text'] {
+        min-width: 180px;
+      }
+      .btn {
+        border: 1px solid #cbd5e1;
+        border-radius: 5px;
+        background: #fff;
+        color: #0f172a;
+        padding: 5px 9px;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .btn:hover {
+        background: #f8fafc;
+      }
+      .btn.primary {
+        background: #6366f1;
+        border-color: #6366f1;
+        color: #fff;
+      }
+      .btn.warn {
+        background: #fff7ed;
+        border-color: #fdba74;
+        color: #9a3412;
+      }
+      .stats {
+        margin-left: auto;
+        font-size: 11px;
+        color: #64748b;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .wrap {
+        padding: 0 24px 32px;
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+        margin-top: 16px;
+        table-layout: fixed;
+      }
+      col.c-id {
+        width: 100px;
+      }
+      col.c-obj {
+        width: 22%;
+      }
+      col.c-in {
+        width: 20%;
+      }
+      col.c-out {
+        width: 16%;
+      }
+      col.c-crit {
+        width: 21%;
+      }
+      col.c-tipo {
+        width: 100px;
+      }
+      col.c-state {
+        width: 132px;
+      }
+      col.c-owner {
+        width: 190px;
+      }
+      thead th {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 9px 11px;
+        text-align: left;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      tbody tr.dr {
+        border-bottom: 1px solid #f1f5f9;
+        transition: background 0.1s;
+      }
+      tbody tr.dr:nth-child(even) {
+        background: #f8fafc;
+      }
+      tbody tr.dr:hover {
+        background: #eff6ff !important;
+      }
+      tr.sh td {
+        background: #334155;
+        color: #e2e8f0;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 5px 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        border-top: 2px solid #6366f1;
+      }
+      tr.sh td span {
+        font-weight: 400;
+        color: #94a3b8;
+        margin-left: 8px;
+        text-transform: none;
+        letter-spacing: 0;
+      }
+      td {
+        padding: 7px 11px;
+        vertical-align: top;
+        word-break: break-word;
+      }
+      td.id {
+        font-family: monospace;
+        font-size: 12px;
+        font-weight: 700;
+        color: #6366f1;
+        white-space: nowrap;
+      }
+      td.id.gap {
+        color: #9ca3af;
+      }
+      td.id.gap-c {
+        color: #dc2626;
+      }
+      td.id.rec {
+        color: #dc2626;
+      }
+      td.obj {
+        font-size: 12px;
+        line-height: 1.4;
+      }
+      td.obj .meta {
+        font-size: 10px;
+        color: #94a3b8;
+        display: block;
+        margin-top: 2px;
+      }
+      td.inp {
+        font-family: monospace;
+        font-size: 11px;
+        color: #475569;
+        line-height: 1.6;
+      }
+      td.out {
+        font-family: monospace;
+        font-size: 12px;
+        font-weight: 700;
+        color: #059669;
+        line-height: 1.4;
+      }
+      td.out.rec {
+        color: #dc2626;
+      }
+      td.out.blk {
+        color: #9ca3af;
+        font-weight: 400;
+        font-style: italic;
+        font-size: 11px;
+      }
+      td.crit {
+        font-size: 11px;
+        color: #475569;
+        line-height: 1.4;
+      }
+      .badge {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 9999px;
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        white-space: nowrap;
+      }
+      .bn {
+        background: #dbeafe;
+        color: #1d4ed8;
+      }
+      .bb {
+        background: #fef3c7;
+        color: #b45309;
+      }
+      .br {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .bg {
+        background: #f3f4f6;
+        color: #374151;
+        border: 1px solid #d1d5db;
+      }
+      .bgc {
+        background: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fca5a5;
+      }
+      .be {
+        background: #ede9fe;
+        color: #5b21b6;
+      }
+      .bh {
+        background: #d1fae5;
+        color: #065f46;
+      }
+      .brt {
+        background: #e0f2fe;
+        color: #0369a1;
+      }
+      tr.hidden {
+        display: none;
+      }
+      .warn {
+        background: #fffbeb;
+        border-left: 3px solid #f59e0b;
+        padding: 8px 11px;
+        font-size: 11px;
+        color: #78350f;
+        margin-top: 16px;
+        border-radius: 0 4px 4px 0;
+      }
+      .prelude {
+        padding: 18px 24px 0;
+      }
+      .panel {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        padding: 14px;
+        margin-top: 12px;
+      }
+      .panel h2 {
+        font-size: 15px;
+        margin-bottom: 8px;
+        color: #0f172a;
+      }
+      .panel p {
+        font-size: 12px;
+        color: #475569;
+        line-height: 1.5;
+        margin: 6px 0;
+      }
+      .case-check {
+        display: grid;
+        gap: 6px;
+        margin: 8px 0 0 18px;
+        color: #334155;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+      .case-note {
+        background: #f0fdf4;
+        border-left: 3px solid #10b981;
+        color: #064e3b;
+        padding: 9px 11px;
+        border-radius: 0 4px 4px 0;
+        margin-top: 10px;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+      .acceptance-code {
+        background: #0f172a;
+        color: #e2e8f0;
+        border-radius: 6px;
+        padding: 10px 12px;
+        white-space: pre-wrap;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+        line-height: 1.55;
+        margin-top: 8px;
+        overflow-x: auto;
+      }
+      .case-example-table td:first-child {
+        font-weight: 800;
+        color: #0f172a;
+        width: 210px;
+      }
+      .validation-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .validation-kpi {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #f8fafc;
+        padding: 10px;
+      }
+      .validation-kpi strong {
+        display: block;
+        font-size: 18px;
+        color: #0f172a;
+      }
+      .validation-kpi span {
+        display: block;
+        font-size: 11px;
+        color: #64748b;
+        margin-top: 2px;
+      }
+      .validation-note {
+        background: #eff6ff;
+        border-left: 3px solid #6366f1;
+        color: #1e3a8a;
+        padding: 9px 11px;
+        border-radius: 0 4px 4px 0;
+        margin-top: 10px;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+      .validation-wrap {
+        max-height: 420px;
+        overflow: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        margin-top: 10px;
+      }
+      .validation-table {
+        margin-top: 0;
+        table-layout: auto;
+        box-shadow: none;
+        border: 0;
+      }
+      .validation-table th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+      .validation-table td {
+        font-size: 10px;
+        line-height: 1.35;
+        vertical-align: middle;
+        white-space: nowrap;
+      }
+      .validation-table td.diag {
+        white-space: normal;
+        min-width: 260px;
+        color: #475569;
+      }
+      .vbadge {
+        display: inline-block;
+        border-radius: 9999px;
+        padding: 2px 7px;
+        font-size: 9px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+      .vok {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .vpartial {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .vblocked {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .vna {
+        background: #f1f5f9;
+        color: #475569;
+      }
+      .maint-panel {
+        padding: 12px 24px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+      }
+      .maint-panel details {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        padding: 10px 12px;
+      }
+      .maint-panel summary {
+        cursor: pointer;
+        font-weight: 800;
+        color: #0f172a;
+        font-size: 12px;
+      }
+      .maint-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .maint-grid label {
+        display: grid;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #475569;
+      }
+      .maint-grid input,
+      .maint-grid select,
+      .maint-grid textarea {
+        border: 1px solid #cbd5e1;
+        border-radius: 5px;
+        padding: 7px 8px;
+        font-size: 12px;
+        background: #fff;
+        color: #0f172a;
+        width: 100%;
+      }
+      .maint-grid textarea {
+        min-height: 72px;
+        resize: vertical;
+        grid-column: span 2;
+      }
+      .maint-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+      }
+      body.editing td[contenteditable='true'] {
+        outline: 1px dashed #818cf8;
+        background: #eef2ff;
+      }
+      td.maint-state,
+      td.maint-owner {
+        background: #fff;
+      }
+      .case-state {
+        width: 100%;
+        border: 1px solid #cbd5e1;
+        border-radius: 5px;
+        padding: 5px 6px;
+        font-size: 11px;
+        background: #fff;
+      }
+      .type-select {
+        width: 100%;
+        border: 1px solid #cbd5e1;
+        border-radius: 5px;
+        padding: 5px 6px;
+        font-size: 11px;
+        background: #fff;
+      }
+      .owner-input {
+        width: 100%;
+        border: 1px solid #cbd5e1;
+        border-radius: 5px;
+        padding: 5px 6px;
+        font-size: 11px;
+        background: #fff;
+        margin-bottom: 5px;
+      }
+      .case-notes summary {
+        cursor: pointer;
+        font-size: 10px;
+        color: #6366f1;
+        font-weight: 800;
+      }
+      .case-notes textarea {
+        width: 100%;
+        min-height: 58px;
+        border: 1px solid #cbd5e1;
+        border-radius: 5px;
+        padding: 6px;
+        font-size: 11px;
+        resize: vertical;
+        margin-top: 4px;
+      }
+      .build-case {
+        margin-top: 6px;
+        width: 100%;
+      }
+      .case-builder {
+        padding: 12px 24px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+      }
+      .case-builder[hidden] {
+        display: none;
+      }
+      .case-builder .panel {
+        margin-top: 0;
+      }
+      .case-builder-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .case-builder-head h2 {
+        margin-bottom: 4px;
+      }
+      .case-builder-table td:first-child {
+        font-weight: 800;
+        color: #0f172a;
+        width: 220px;
+      }
+      .case-builder-table td {
+        vertical-align: top;
+      }
+      .case-builder-table td:nth-child(2) {
+        white-space: pre-wrap;
+      }
+      .builder-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+      }
+      .new-case {
+        background: #ecfeff !important;
+      }
+      .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 12px;
+      }
+      .mini-table {
+        margin-top: 8px;
+        table-layout: auto;
+        box-shadow: none;
+        border: 1px solid #e2e8f0;
+      }
+      .mini-table th {
+        background: #e2e8f0;
+        color: #0f172a;
+      }
+      .mini-table td {
+        font-size: 11px;
+      }
+      .count {
+        font-family: monospace;
+        font-weight: 800;
+        color: #6366f1;
+      }
+      .type-title {
+        font-weight: 800;
+        color: #0f172a;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Golden Dataset RBAC — Control de Acceso Modular</h1>
+      <p>
+        pec-rbac-pilot · AdonisJS 6 + Inertia + React · ADR-010 · v0.1.0-propuesta · 2026-07-08 ·
+        <span id="totalCasesHeader">22</span> casos
+      </p>
+      <p>Documento creado por Jose Gomez — QA Automatizador · ACHS</p>
+    </header>
+
+    <div class="controls">
+      <label>Sección:</label>
+      <select id="fSec" onchange="fil()">
+        <option value="">Todas</option>
+        <option value="ACCESO">Acceso / Roles</option>
+        <option value="AUTHZ">Autorización</option>
+        <option value="DENY">Denegaciones</option>
+        <option value="ERR">Errores</option>
+        <option value="RT">Runtime</option>
+      </select>
+      <label>Tipo:</label>
+      <select id="fTipo" onchange="fil()">
+        <option value="">Todos</option>
+        <option value="normal">Caso normal</option>
+        <option value="borde">Caso borde</option>
+        <option value="rechazo">RECHAZO</option>
+        <option value="error">Error validación</option>
+        <option value="gap">GAP</option>
+        <option value="gap-critico">GAP crítico</option>
+        <option value="runtime">Runtime</option>
+      </select>
+      <label>Buscar:</label>
+      <input type="text" id="fQ" placeholder="ID, capability, rol, error_code..." oninput="fil()" />
+      <label>Estado:</label>
+      <select id="fEstado" onchange="fil()">
+        <option value="">Todos</option>
+        <option value="propuesto">Propuesto</option>
+        <option value="aprobado">Aprobado</option>
+        <option value="pendiente">Pendiente</option>
+        <option value="bloqueado">Bloqueado</option>
+        <option value="fuera_alcance">Fuera de alcance</option>
+        <option value="aprobado_condicionado">Aprobado condicionado</option>
+        <option value="en_revision">En revisión</option>
+      </select>
+      <button class="btn" type="button" id="toggleEdit">Modo edición: OFF</button>
+      <button class="btn primary" type="button" id="exportMaint">Exportar cambios JSON</button>
+      <button class="btn warn" type="button" id="clearMaint">Limpiar cambios locales</button>
+      <div class="stats" id="stats">22 casos visibles</div>
+    </div>
+
+    <section class="maint-panel">
+      <details>
+        <summary>Agregar nuevo caso al Golden Dataset</summary>
+        <div class="maint-grid">
+          <label
+            >ID del caso
+            <input id="newId" type="text" placeholder="GD-ACCESO-999" />
+          </label>
+          <label
+            >Sección
+            <select id="newSec">
+              <option value="ACCESO">Acceso / Roles</option>
+              <option value="AUTHZ">Autorización</option>
+              <option value="DENY">Denegaciones</option>
+              <option value="ERR">Errores</option>
+              <option value="RT">Runtime</option>
+            </select>
+          </label>
+          <label
+            >Tipo
+            <select id="newTipo">
+              <option value="normal">Caso normal</option>
+              <option value="borde">Caso borde</option>
+              <option value="rechazo">Rechazo</option>
+              <option value="error">Error validación</option>
+              <option value="gap">GAP</option>
+              <option value="gap-critico">GAP crítico</option>
+              <option value="runtime">Runtime</option>
+            </select>
+          </label>
+          <label
+            >Estado del caso
+            <select id="newEstado">
+              <option value="propuesto">Propuesto</option>
+              <option value="aprobado">Aprobado</option>
+              <option value="pendiente">Pendiente</option>
+              <option value="bloqueado">Bloqueado</option>
+              <option value="fuera_alcance">Fuera de alcance</option>
+              <option value="aprobado_condicionado">Aprobado condicionado</option>
+              <option value="en_revision">En revisión</option>
+            </select>
+          </label>
+          <label
+            >Responsable
+            <input id="newOwner" type="text" placeholder="Seguridad / Arquitectura / Producto" />
+          </label>
+          <label
+            >Objetivo / escenario
+            <textarea
+              id="newObj"
+              placeholder="Qué valida el caso y qué situación de negocio representa"
+            ></textarea>
+          </label>
+          <label
+            >Entrada
+            <textarea
+              id="newInp"
+              placeholder="subject, rol, capability, token, endpoint..."
+            ></textarea>
+          </label>
+          <label
+            >Salida esperada
+            <textarea
+              id="newOut"
+              placeholder="PERMITIDO / RECHAZADO, HTTP status, error_code..."
+            ></textarea>
+          </label>
+          <label
+            >Criterio de aceptación
+            <textarea
+              id="newCrit"
+              placeholder="Tolerancia, regla, condición de éxito, negativo si aplica..."
+            ></textarea>
+          </label>
+          <label
+            >Notas
+            <textarea
+              id="newNotes"
+              placeholder="Apuntes, fuente, evidencia, pendiente o acuerdo"
+            ></textarea>
+          </label>
+        </div>
+        <div class="maint-actions">
+          <button class="btn primary" type="button" id="addCase">Agregar caso</button>
+          <button class="btn" type="button" id="clearNewCase">Limpiar formulario</button>
+        </div>
+      </details>
+    </section>
+
+    <section class="case-builder" id="caseBuilderPanel" hidden>
+      <div class="panel">
+        <div class="case-builder-head">
+          <div>
+            <h2>Caso Golden armado desde la tabla</h2>
+            <p>
+              Este bloque se genera desde la fila seleccionada. Si necesitas corregir algo, edita
+              primero la fila en modo edición y vuelve a presionar "Armar caso".
+            </p>
+          </div>
+          <button class="btn" type="button" id="closeCaseBuilder">Cerrar</button>
+        </div>
+        <table class="mini-table case-builder-table">
+          <tbody id="caseBuilderBody"></tbody>
+        </table>
+        <p><strong>Criterio de aceptación armado:</strong></p>
+        <pre class="acceptance-code" id="caseBuilderAcceptance"></pre>
+        <div class="builder-actions">
+          <button class="btn primary" type="button" id="copyBuiltCase">Copiar caso</button>
+          <button class="btn" type="button" id="exportBuiltCase">Exportar caso MD</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="prelude">
+      <div class="panel">
+        <h2>Referencia: qué debe traer un buen caso de Golden Dataset RBAC</h2>
+        <p>
+          Un caso del Golden RBAC no es solo "este rol puede hacer esta acción". Debe permitir que
+          seguridad, QA, arquitectura y auditoría entiendan qué situación de autorización se valida,
+          con qué datos, bajo qué regla del dominio, cuál es el resultado correcto y quién lo
+          aprueba.
+        </p>
+        <p><strong>Cada caso debería tener:</strong></p>
+        <ul class="case-check">
+          <li>
+            <strong>Escenario de negocio:</strong> qué situación real de autorización representa.
+          </li>
+          <li>
+            <strong>Datos de entrada:</strong> subject, rol(es), capability requerida, tipo de
+            credencial (sesión BFF o Bearer), endpoint.
+          </li>
+          <li>
+            <strong>Resultado esperado:</strong> PERMITIDO o RECHAZADO, HTTP status, error_code
+            estable si aplica.
+          </li>
+          <li>
+            <strong>Fundamento:</strong> ADR que respalda la decisión, regla del capability-map,
+            contrato de error_codes.
+          </li>
+          <li>
+            <strong>Criterio negativo:</strong> cuándo el sistema debe devolver access_denied,
+            unauthenticated o relation_violation.
+          </li>
+          <li>
+            <strong>Tolerancia:</strong> el error_code debe ser exacto (estable), no texto libre.
+          </li>
+          <li><strong>Responsable:</strong> persona o área que firma que el caso es correcto.</li>
+          <li>
+            <strong>Estado:</strong> aprobado, pendiente, bloqueado por gap o fuera de alcance.
+          </li>
+        </ul>
+        <div class="case-note">
+          Regla práctica: si un caso solo dice "rol X puede hacer Y", pero no especifica el
+          error_code esperado en el caso negativo, el endpoint afectado y el fundamento del ADR,
+          todavía no debería considerarse Golden oficial.
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Ejemplo claro aplicado a RBAC</h2>
+        <p>
+          Ejemplo de caso para
+          <strong>verificación de capability rbac.roles.assign por AdminRBAC</strong>. Los roles,
+          capabilities y error_codes son los definidos en ADR-010; deben validarse con el equipo
+          antes de marcar el caso como aprobado.
+        </p>
+        <table class="mini-table case-example-table">
+          <thead>
+            <tr>
+              <th>Campo</th>
+              <th>Ejemplo RBAC</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>ID del caso</td>
+              <td><code>GD-AUTHZ-01</code></td>
+            </tr>
+            <tr>
+              <td>Escenario de negocio</td>
+              <td>
+                Un Subject con rol <strong>AdminRBAC</strong> invoca
+                <code>authz.require('rbac.roles.assign')</code> para asignar un rol a otro Subject.
+                Como AdminRBAC tiene esa capability en el capability-map, la autorización debe
+                concederse.
+              </td>
+            </tr>
+            <tr>
+              <td>Datos de entrada</td>
+              <td>
+                subject_id = <code>admin-001</code>. Rol resuelto = <code>AdminRBAC</code> (vía
+                IamAdapter + claimsToSubject). Capability requerida =
+                <code>rbac.roles.assign</code>. Endpoint: <code>POST /api/rbac/roles</code>.
+                Credencial: Bearer (Client Credentials).
+              </td>
+            </tr>
+            <tr>
+              <td>Resultado esperado</td>
+              <td>
+                HTTP <code>200</code>. Autorización PERMITIDA. <code>AppAuditWriter</code> recibe
+                evento de decisión. AccessContext en respuesta contiene
+                <code>rbac.roles.assign</code> en capabilities.
+              </td>
+            </tr>
+            <tr>
+              <td>Fundamento</td>
+              <td>
+                ADR-010 · capability-map · AuthorizationServiceImpl · contrato error_codes estables.
+              </td>
+            </tr>
+            <tr>
+              <td>Criterio negativo</td>
+              <td>
+                Si el Subject tiene rol Operador en vez de AdminRBAC, debe devolver HTTP 403 con
+                <code>{ code: "access_denied" }</code>. Nunca texto libre.
+              </td>
+            </tr>
+            <tr>
+              <td>Tolerancia</td>
+              <td>
+                error_code debe ser exactamente "access_denied" (string estable). No "forbidden", no
+                "Acceso denegado".
+              </td>
+            </tr>
+            <tr>
+              <td>Responsable</td>
+              <td>
+                Arquitectura valida capability-map. Seguridad valida contrato error_codes. QA valida
+                cobertura de casos negativos.
+              </td>
+            </tr>
+            <tr>
+              <td>Estado</td>
+              <td>
+                <code>Propuesto</code>. Queda <code>Aprobado</code> cuando Arquitectura y Seguridad
+                firman el capability-map completo.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p><strong>Caso expresado como criterio de aceptación:</strong></p>
+        <pre class="acceptance-code">
+Dado un Subject con subject_id "admin-001"
+Y con rol AdminRBAC resuelto por IamAdapter desde los grupos de Entra ID
+Y con credencial Bearer (Client Credentials) válida
+
+Cuando el sistema evalúa authz.require('rbac.roles.assign')
+
+Entonces debe conceder acceso (HTTP 200)
+Y el AccessContext debe contener 'rbac.roles.assign' en capabilities
+Y AppAuditWriter debe registrar el evento de decisión
+Y si el Subject tuviera rol Operador, debe devolver HTTP 403 con { code: "access_denied" }</pre>
+      </div>
+
+      <div class="panel">
+        <h2>Validación de completitud contra la referencia de buen caso Golden</h2>
+        <p>
+          Esta sección valida automáticamente las filas del documento contra la referencia anterior.
+        </p>
+        <div class="validation-note">
+          <strong>Criterio usado:</strong> un caso puede estar técnicamente completo si trae
+          escenario, entrada, salida esperada, fundamento ADR, criterio de aceptación/tolerancia y
+          estado. Para quedar como Golden oficial, además requiere responsable/firma y resolución de
+          gaps.
+        </div>
+        <div class="validation-summary">
+          <div class="validation-kpi">
+            <strong id="val-total">0</strong><span>Total de casos evaluados</span>
+          </div>
+          <div class="validation-kpi">
+            <strong id="val-tech">0</strong><span>Técnicamente completos</span>
+          </div>
+          <div class="validation-kpi">
+            <strong id="val-blocked">0</strong><span>Bloqueados por gap</span>
+          </div>
+          <div class="validation-kpi">
+            <strong id="val-official">0</strong><span>Golden oficial hoy</span>
+          </div>
+        </div>
+        <div class="validation-wrap">
+          <table class="validation-table mini-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Tipo</th>
+                <th>Escenario</th>
+                <th>Entrada</th>
+                <th>Resultado</th>
+                <th>Fundamento</th>
+                <th>Negativo</th>
+                <th>Tolerancia</th>
+                <th>Responsable</th>
+                <th>Estado</th>
+                <th>Diagnóstico</th>
+              </tr>
+            </thead>
+            <tbody id="validationBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Alcance de la propuesta</h2>
+        <p>
+          <strong>Documento creado por Jose Gomez — QA Automatizador.</strong> Esta tabla canónica
+          cubre los casos de autorización del módulo RBAC de pec-rbac-pilot (AdonisJS 6 + Inertia +
+          React) según ADR-010. Incluye casos de resolución de AccessContext, verificación de
+          capabilities, denegaciones explícitas, errores de validación y resiliencia de runtime.
+        </p>
+        <p>
+          Los roles (AdminRBAC, Auditor, Operador, Simulador) y las capabilities (rbac.roles.assign,
+          rbac.audit.view, etc.) son propuesta técnica basada en el ADR-010. Deben validarse con el
+          equipo antes de marcar casos como aprobados.
+        </p>
+      </div>
+
+      <div class="info-grid">
+        <div class="panel">
+          <h2>Tipos de test</h2>
+          <table class="mini-table">
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Qué valida</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="type-title">normal</td>
+                <td>
+                  Flujo nominales donde el Subject tiene la capability y el acceso se concede sin
+                  observaciones.
+                </td>
+              </tr>
+              <tr>
+                <td class="type-title">borde</td>
+                <td>
+                  Límites del modelo: sin roles, múltiples roles, grupos no mapeados, capabilities
+                  vacías.
+                </td>
+              </tr>
+              <tr>
+                <td class="type-title">rechazo</td>
+                <td>
+                  Casos negativos donde el acceso debe denegarse con error_code estable
+                  (access_denied, unauthenticated, relation_violation).
+                </td>
+              </tr>
+              <tr>
+                <td class="type-title">error</td>
+                <td>
+                  Validaciones técnicas: token malformado, subject vacío, capability inexistente en
+                  el catálogo.
+                </td>
+              </tr>
+              <tr>
+                <td class="type-title">gap</td>
+                <td>
+                  Brechas funcionales o de definición aún no cerradas; comportamiento exacto
+                  pendiente de ADR.
+                </td>
+              </tr>
+              <tr>
+                <td class="type-title">gap-critico</td>
+                <td>
+                  Brechas de alto riesgo que pueden derivar en escalada de privilegios o pérdida de
+                  trazabilidad.
+                </td>
+              </tr>
+              <tr>
+                <td class="type-title">runtime</td>
+                <td>
+                  Resiliencia, idempotencia, fallback de IamAdapter, audit eventual y pipeline
+                  Bearer vs sesión.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <h2>Cuadro de conteo por tipo</h2>
+          <table class="mini-table">
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Cantidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>normal</td>
+                <td id="ct-normal" class="count">0</td>
+              </tr>
+              <tr>
+                <td>borde</td>
+                <td id="ct-borde" class="count">0</td>
+              </tr>
+              <tr>
+                <td>rechazo</td>
+                <td id="ct-rechazo" class="count">0</td>
+              </tr>
+              <tr>
+                <td>error</td>
+                <td id="ct-error" class="count">0</td>
+              </tr>
+              <tr>
+                <td>gap</td>
+                <td id="ct-gap" class="count">0</td>
+              </tr>
+              <tr>
+                <td>gap-critico</td>
+                <td id="ct-gap-critico" class="count">0</td>
+              </tr>
+              <tr>
+                <td>historico</td>
+                <td id="ct-historico" class="count">0</td>
+              </tr>
+              <tr>
+                <td>runtime</td>
+                <td id="ct-runtime" class="count">0</td>
+              </tr>
+              <tr>
+                <td><strong>Total final</strong></td>
+                <td id="ct-total" class="count">0</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Glosario de datos, siglas y reglas RBAC</h2>
+        <table class="mini-table">
+          <thead>
+            <tr>
+              <th>Término</th>
+              <th>Definición operativa</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>RBAC (Role-Based Access Control)</td>
+              <td>
+                Modelo de control de acceso donde los permisos se asignan a roles y los roles a
+                subjects. El módulo controla qué Subject puede ejercer qué Capability.
+              </td>
+            </tr>
+            <tr>
+              <td>Subject</td>
+              <td>
+                Entidad autenticada (persona o agente) que solicita acceso. Se construye a partir de
+                los claims del token vía claimsToSubject.
+              </td>
+            </tr>
+            <tr>
+              <td>Capability</td>
+              <td>
+                Permiso granular que un Subject puede tener. Ejemplos: rbac.roles.assign,
+                rbac.audit.view, rbac.simulator.run. Es el contrato público del módulo.
+              </td>
+            </tr>
+            <tr>
+              <td>AccessContext</td>
+              <td>
+                Estructura inmutable que describe las capabilities efectivas de un Subject en un
+                momento dado. Construida por buildAccessContext a partir de los roles resueltos.
+              </td>
+            </tr>
+            <tr>
+              <td>capability-map</td>
+              <td>
+                Tabla que mapea cada rol a su conjunto de capabilities. Define la política de
+                autorización. Cambiar el capability-map es una decisión de negocio y requiere ADR.
+              </td>
+            </tr>
+            <tr>
+              <td>IamAdapter</td>
+              <td>
+                Interfaz que consulta Entra ID para obtener los grupos del Subject. En tests, se
+                reemplaza por StubIamAdapter via IoC con TEST_MODE=architecture.
+              </td>
+            </tr>
+            <tr>
+              <td>StubIamAdapter</td>
+              <td>
+                Implementación de IamAdapter para tests. Retorna grupos ficticios sin consultar
+                Entra ID. Se registra en el IoC cuando TEST_MODE=architecture.
+              </td>
+            </tr>
+            <tr>
+              <td>AppAuditWriter</td>
+              <td>
+                Interfaz que registra eventos de decisión de autorización (quién, qué, resultado).
+                No es bloqueante: su indisponibilidad no debe bloquear el acceso.
+              </td>
+            </tr>
+            <tr>
+              <td>AuthorizationService</td>
+              <td>
+                Servicio central del dominio RBAC. Expone authz.require(capability) que lanza
+                excepción de dominio si el Subject no tiene la capability.
+              </td>
+            </tr>
+            <tr>
+              <td>AgentRegistry</td>
+              <td>
+                Registro de agentes (jobs batch, AFK, HITL, sistemas externos) autorizados a
+                consumir el módulo vía Bearer. Separado de los usuarios humanos.
+              </td>
+            </tr>
+            <tr>
+              <td>AdminRBAC</td>
+              <td>
+                Rol propuesto con todas las capabilities de gobierno: assign, revoke, matrix.view,
+                my-access.view, simulator.run, audit.view. Pendiente de validación.
+              </td>
+            </tr>
+            <tr>
+              <td>Auditor</td>
+              <td>
+                Rol propuesto con capabilities de solo lectura: audit.view, matrix.view. No puede
+                modificar roles. Pendiente de validación.
+              </td>
+            </tr>
+            <tr>
+              <td>Operador</td>
+              <td>
+                Rol propuesto con capability mínima: my-access.view. Solo puede ver su propio
+                AccessContext. Pendiente de validación.
+              </td>
+            </tr>
+            <tr>
+              <td>Simulador</td>
+              <td>
+                Rol propuesto con capability: simulator.run + my-access.view. Puede simular
+                AccessContext de otros subjects sin modificarlos. Pendiente de validación.
+              </td>
+            </tr>
+            <tr>
+              <td>access_denied</td>
+              <td>
+                error_code estable que el módulo devuelve cuando el Subject está autenticado pero no
+                tiene la capability requerida. HTTP 403.
+              </td>
+            </tr>
+            <tr>
+              <td>unauthenticated</td>
+              <td>
+                error_code estable cuando no hay credencial válida (token ausente, malformado o
+                expirado). HTTP 401.
+              </td>
+            </tr>
+            <tr>
+              <td>relation_violation</td>
+              <td>
+                error_code estable cuando el Subject intenta asignar un rol o capability superior al
+                suyo propio. HTTP 403. Contrato definido en ADR-010.
+              </td>
+            </tr>
+            <tr>
+              <td>Entra ID</td>
+              <td>
+                Proveedor de identidad corporativo de ACHS. Provee los grupos del usuario vía OIDC
+                claims. El IamAdapter los transforma en roles RBAC.
+              </td>
+            </tr>
+            <tr>
+              <td>Bearer (Client Credentials)</td>
+              <td>
+                Flujo OAuth 2.0 para agentes y sistemas externos. El token Bearer se valida por el
+                mismo pipeline que la sesión BFF — no hay camino privilegiado.
+              </td>
+            </tr>
+            <tr>
+              <td>TEST_MODE=architecture</td>
+              <td>
+                Variable de entorno que activa el StubIamAdapter y StubAuditWriter via IoC. Permite
+                tests unitarios sin depender de Entra ID ni del sistema de auditoría real.
+              </td>
+            </tr>
+            <tr>
+              <td>Toxiproxy</td>
+              <td>
+                Proxy de red para tests de resiliencia. Simula timeouts, latencia y cortes en la
+                conexión a IamAdapter o AppAuditWriter en tests de Nivel 2.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="wrap">
+      <div class="warn">
+        ⚠ Roles y capabilities son propuesta técnica basada en ADR-010. Requieren validación de
+        Arquitectura y Seguridad antes de implementar. Casos marcados GAP no deben implementarse
+        hasta cerrar la definición indicada.
+      </div>
+      <table id="T">
+        <colgroup>
+          <col class="c-id" />
+          <col class="c-obj" />
+          <col class="c-in" />
+          <col class="c-out" />
+          <col class="c-crit" />
+          <col class="c-tipo" />
+          <col class="c-state" />
+          <col class="c-owner" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Objetivo</th>
+            <th>Entrada (campos clave)</th>
+            <th>Salida esperada</th>
+            <th>Criterio de aceptación</th>
+            <th>Tipo</th>
+            <th>Estado caso</th>
+            <th>Responsable / notas</th>
+          </tr>
+        </thead>
+        <tbody id="TB">
+          <!-- ═══════════════════════════════════════════════ ACCESO ═══ -->
+          <tr class="sh" data-sh="ACCESO">
+            <td colspan="8">
+              A — Resolución de Roles y AccessContext
+              <span>6 casos · IamAdapter · claimsToSubject · buildAccessContext</span>
+            </td>
+          </tr>
+
+          <tr class="dr" data-sec="ACCESO" data-tipo="normal">
+            <td class="id">GD-ACCESO-01</td>
+            <td class="obj">
+              IamAdapter mapea grupos de Entra ID a roles RBAC y construye AccessContext válido<span
+                class="meta"
+                >IamAdapter · claimsToSubject · ADR-010 · ADR-001</span
+              >
+            </td>
+            <td class="inp">
+              groups_entra_id = ["RBAC-Admin", "PEC-Auditores"]<br />subject_id = "user-123"<br />TEST_MODE
+              = architecture
+            </td>
+            <td class="out">
+              roles = [AdminRBAC, Auditor]<br /><span style="font-weight: 400; font-size: 11px"
+                >AccessContext válido · capabilities = unión</span
+              >
+            </td>
+            <td class="crit">
+              capabilities contiene rbac.roles.assign y rbac.audit.view. AccessContext no es null.
+              No debe lanzar excepción por grupo desconocido.
+            </td>
+            <td><span class="badge bn">Caso normal</span></td>
+          </tr>
+
+          <tr class="dr" data-sec="ACCESO" data-tipo="normal">
+            <td class="id">GD-ACCESO-02</td>
+            <td class="obj">
+              Subject con rol AdminRBAC obtiene el conjunto completo de capabilities de
+              gobierno<span class="meta">capability-map · AuthorizationServiceImpl · ADR-010</span>
+            </td>
+            <td class="inp">
+              subject_id = "admin-001"<br />role = AdminRBAC<br />TEST_MODE = architecture
+            </td>
+            <td class="out">
+              capabilities = [rbac.roles.assign, rbac.roles.revoke, rbac.matrix.view,
+              rbac.my-access.view, rbac.simulator.run, rbac.audit.view]<br /><span
+                style="font-weight: 400; font-size: 11px"
+                >count = 6</span
+              >
+            </td>
+            <td class="crit">
+              capabilities.length debe ser exactamente 6. Todas las capabilities deben estar
+              presentes. Si falta alguna → capability-map incompleto.
+            </td>
+            <td><span class="badge bn">Caso normal</span></td>
+          </tr>
+
+          <tr class="dr" data-sec="ACCESO" data-tipo="normal">
+            <td class="id">GD-ACCESO-03</td>
+            <td class="obj">
+              Subject con rol Auditor obtiene solo capabilities de lectura, sin capabilities de
+              modificación<span class="meta"
+                >capability-map · ADR-010 · principio mínimo privilegio</span
+              >
+            </td>
+            <td class="inp">
+              subject_id = "auditor-001"<br />role = Auditor<br />TEST_MODE = architecture
+            </td>
+            <td class="out">
+              capabilities = [rbac.audit.view, rbac.matrix.view]<br /><span
+                style="font-weight: 400; font-size: 11px"
+                >count = 2</span
+              >
+            </td>
+            <td class="crit">
+              NO debe contener: rbac.roles.assign, rbac.roles.revoke, rbac.simulator.run. Si
+              contiene alguna → escalada de privilegios, bug crítico.
+            </td>
+            <td><span class="badge bn">Caso normal</span></td>
+          </tr>
+
+          <tr class="dr" data-sec="ACCESO" data-tipo="borde">
+            <td class="id">GD-ACCESO-04</td>
+            <td class="obj">
+              Subject con dos roles simultáneos obtiene la unión de capabilities sin duplicados<span
+                class="meta"
+                >capability-map · Set union · ADR-010</span
+              >
+            </td>
+            <td class="inp">
+              subject_id = "multi-001"<br />roles = [Auditor, Simulador]<br />TEST_MODE =
+              architecture
+            </td>
+            <td class="out">
+              capabilities = [rbac.audit.view, rbac.matrix.view, rbac.simulator.run]<br /><span
+                style="font-weight: 400; font-size: 11px"
+                >count = 3 · sin duplicados</span
+              >
+            </td>
+            <td class="crit">
+              Si ambos roles comparten rbac.matrix.view, el resultado debe tenerla UNA sola vez.
+              capabilities es un Set — no una lista con duplicados.
+            </td>
+            <td><span class="badge bb">Caso borde</span></td>
+          </tr>
+
+          <tr class="dr" data-sec="ACCESO" data-tipo="borde">
+            <td class="id">GD-ACCESO-05</td>
+            <td class="obj">
+              Subject sin ningún rol asignado obtiene AccessContext con capabilities vacío — no es
+              un error<span class="meta">capability-map · ADR-010 · caso válido de negocio</span>
+            </td>
+            <td class="inp">
+              subject_id = "norole-001"<br />groups_entra = []<br />roles = []<br />TEST_MODE =
+              architecture
+            </td>
+            <td class="out">
+              capabilities = []<br /><span style="font-weight: 400; font-size: 11px"
+                >AccessContext válido · count = 0</span
+              >
+            </td>
+            <td class="crit">
+              capabilities vacío es un estado válido — no debe lanzar excepción en
+              buildAccessContext. Cualquier authz.require posterior devolverá access_denied.
+            </td>
+            <td><span class="badge bb">Caso borde</span></td>
+          </tr>
+
+          <tr class="dr" data-sec="ACCESO" data-tipo="borde">
+            <td class="id">GD-ACCESO-06</td>
+            <td class="obj">
+              IamAdapter retorna grupo de Entra ID sin mapping en capability-map — se ignora sin
+              error<span class="meta"
+                >IamAdapter · capability-map · ADR-010 · tolerancia a datos externos</span
+              >
+            </td>
+            <td class="inp">
+              groups_entra = ["GRUPO-DESCONOCIDO-999"]<br />subject_id = "unk-001"<br />TEST_MODE =
+              architecture
+            </td>
+            <td class="out">
+              capabilities = []<br /><span style="font-weight: 400; font-size: 11px"
+                >AccessContext válido · no error</span
+              >
+            </td>
+            <td class="crit">
+              Grupos sin mapping deben ignorarse silenciosamente. No debe lanzar excepción. El
+              sistema no debe fallar por grupos de Entra ID desconocidos.
+            </td>
+            <td><span class="badge bb">Caso borde</span></td>
+          </tr>
+
+          <!-- ═══════════════════════════════════════════════ AUTHZ ═══ -->
+          <tr class="sh" data-sh="AUTHZ">
+            <td colspan="8">
+              B — Verificación de Capabilities (authz.require)
+              <span>5 casos · AuthorizationService · Inertia routes</span>
+            </td>
+          </tr>
+
+          <tr class="dr" data-sec="AUTHZ" data-tipo="normal">
+            <td class="id">GD-AUTHZ-01</td>
+            <td class="obj">
+              AdminRBAC invoca authz.require('rbac.roles.assign') — debe permitirse y quedar
+              auditado<span class="meta">AuthorizationServiceImpl · AppAuditWriter · ADR-010</span>
+            </td>
+            <td class="inp">
+              subject = AdminRBAC<br />capability = rbac.roles.assign<br />endpoint = POST
+              /api/rbac/roles<br />credencial = Bearer
+            </td>
+            <td class="out">
+              PERMITIDO<br /><span style="font-weight: 400; font-size: 11px"
+                >HTTP 200 · AppAuditWriter recibe evento</span
+              >
+            </td>
+            <td class="crit">
+              authz.require no lanza excepción. AppAuditWriter debe recibir el evento de decisión.
+              AccessContext en respuesta contiene rbac.roles.assign.
+            </td>
+            <td><span class="badge bn">Caso normal</span></td>
+          </tr>
+
+          <tr class="dr" data-sec="AUTHZ" data-tipo="normal">
+            <td class="id">GD-AUTHZ-02</td>
+            <td class="obj">
+              Auditor accede a /rbac/auditoria — Inertia renderiza la página con AccessContext en
+              props<span class="meta">middleware.rbacAuth · Inertia SSR · ADR-010</span>
+            </td>
+            <td class="inp">
+              subject = Auditor<br />capability = rbac.audit.view<br />endpoint = GET
+              /rbac/auditoria<br />credencial = sesión BFF
+            </td>
+            <td class="out">
+              PERMITIDO<br /><span style="font-weight: 400; font-size: 11px"
+                >HTTP 200 · AccessContext en Inertia props</span
+              >
+            </td>
+            <td class="crit">
+              response.status = 200. La página carga vía Inertia server-side. AccessContext
+              serializado como DTO en props — no expone internals del dominio.
+            </td>
+            <td><span class="badge bn">Caso normal</span></td>
+          </tr>
+
+          <tr class="dr" data-sec="AUTHZ" data-tipo="normal">
+            <td class="id">GD-AUTHZ-03</td>
+            <td class="obj">
+              Operador accede a /rbac/mi-acceso — solo ve su propio AccessContext, no el de otros
+              subjects<span class="meta"
+                >middleware.rbacAuth · ADR-010 · principio least-privilege</span
+              >
+            </td>
+            <td class="inp">
+              subject = Operador<br />capability = rbac.my-access.view<br />endpoint = GET
+              /rbac/mi-acceso<br />credencial = sesión BFF
+            </td>
+            <td class="out">
+              PERMITIDO<br /><span style="font-weight: 400; font-size: 11px"
+                >HTTP 200 · solo props del propio Subject</span
+              >
+            </td>
+            <td class="crit">
+              La respuesta NO debe exponer capabilities de otros subjects. Si las props contienen
+              información de otro Subject → fuga de datos, bug crítico.
+            </td>
+            <td><span class="badge bn">Caso normal</span></td>
+          </tr>
+
+          <tr class="dr" data-sec="AUTHZ" data-tipo="normal">
+            <td class="id">GD-AUTHZ-04</td>
+            <td class="obj">
+              Simulador ejecuta rbac.simulator.run para obtener AccessContext de otro subject — no
+              lo modifica<span class="meta"
+                >AuthorizationServiceImpl · rbac.simulator.run · ADR-010</span
+              >
+            </td>
+            <td class="inp">
+              subject = Simulador<br />capability = rbac.simulator.run<br />simulated_subject_id =
+              "user-789"<br />credencial = sesión BFF
+            </td>
+            <td class="out">
+              PERMITIDO<br /><span style="font-weight: 400; font-size: 11px"
+                >AccessContext simulado del subject target · sin mutación</span
+              >
+            </td>
+            <td class="crit">
+              La simulación es de SOLO LECTURA. El AccessContext real del subject simulado no debe
+              modificarse. No debe persistir cambios.
+            </td>
+            <td><span class="badge bn">Caso normal</span></td>
+          </tr>
+
+          <tr class="dr" data-sec="AUTHZ" data-tipo="rechazo">
+            <td class="id rec">GD-AUTHZ-05</td>
+            <td class="obj">
+              Operador intenta authz.require('rbac.roles.assign') — debe rechazarse con
+              access_denied<span class="meta"
+                >AuthorizationServiceImpl · error_code estable · ADR-010</span
+              >
+            </td>
+            <td class="inp">
+              subject = Operador<br />capability = rbac.roles.assign<br />endpoint = POST
+              /api/rbac/roles<br />credencial = Bearer
+            </td>
+            <td class="out rec">
+              RECHAZADO<br /><span style="font-weight: 400; font-size: 11px"
+                >HTTP 403 · { code: "access_denied" }</span
+              >
+            </td>
+            <td class="crit">
+              error_code debe ser exactamente "access_denied" (string estable). No "forbidden", no
+              "Acceso denegado", no texto libre. Los consumidores deciden por code, no por mensaje.
+            </td>
+            <td><span class="badge br">RECHAZO</span></td>
+          </tr>
+
+          <!-- ═══════════════════════════════════════════════ DENY ═══ -->
+          <tr class="sh" data-sh="DENY">
+            <td colspan="8">
+              C — Denegaciones Explícitas
+              <span>4 casos · unauthenticated · access_denied · relation_violation</span>
+            </td>
+          </tr>
+
+          <tr class="dr" data-sec="DENY" data-tipo="rechazo">
+            <td class="id rec">GD-DENY-01</td>
+            <td class="obj">
+              Request a /rbac/* sin token ni cookie — debe devolver unauthenticated, no HTML ni
+              redirect en API<span class="meta"
+                >middleware.rbacAuth · ADR-010 · separación web/api</span
+              >
+            </td>
+            <td class="inp">
+              método = GET<br />path = /rbac/matriz<br />Authorization = ausente<br />Cookie =
+              ausente
+            </td>
+            <td class="out rec">
+              Ruta web: redirect 302 login<br /><span style="font-weight: 400; font-size: 11px"
+                >Ruta /api/*: HTTP 401 · { code: "unauthenticated" }</span
+              >
+            </td>
+            <td class="crit">
+              Ruta /api/rbac/*: NUNCA HTML ni redirect. Siempre JSON { code: "unauthenticated" }.
+              Ruta web: redirect 302 a la página de login.
+            </td>
+            <td><span class="badge br">RECHAZO</span></td>
+          </tr>
+
+          <tr class="dr" data-sec="DENY" data-tipo="rechazo">
+            <td class="id rec">GD-DENY-02</td>
+            <td class="obj">
+              Subject autenticado intenta acceder a /rbac/auditoria sin tener rbac.audit.view —
+              access_denied<span class="meta">middleware.rbacAuth · authz.require · ADR-010</span>
+            </td>
+            <td class="inp">
+              subject = Operador<br />capability requerida = rbac.audit.view<br />path =
+              /rbac/auditoria<br />credencial = sesión BFF válida
+            </td>
+            <td class="out rec">
+              RECHAZADO<br /><span style="font-weight: 400; font-size: 11px"
+                >HTTP 403 · { code: "access_denied" }</span
+              >
+            </td>
+            <td class="crit">
+              La respuesta no debe exponer información de la ruta protegida ni internals del
+              dominio. error_code = "access_denied" exacto.
+            </td>
+            <td><span class="badge br">RECHAZO</span></td>
+          </tr>
+
+          <tr class="dr" data-sec="DENY" data-tipo="rechazo">
+            <td class="id rec">GD-DENY-03</td>
+            <td class="obj">
+              Subject Auditor intenta asignar rol AdminRBAC (superior al suyo) —
+              relation_violation<span class="meta"
+                >AuthorizationServiceImpl · relation_violation · ADR-010</span
+              >
+            </td>
+            <td class="inp">
+              subject = Auditor<br />acción = rbac.roles.assign<br />rol_a_asignar = AdminRBAC<br />endpoint
+              = POST /api/rbac/roles
+            </td>
+            <td class="out rec">
+              RECHAZADO<br /><span style="font-weight: 400; font-size: 11px"
+                >HTTP 403 · { code: "relation_violation" }</span
+              >
+            </td>
+            <td class="crit">
+              Debe devolver "relation_violation", NO "access_denied". Son semánticamente distintos:
+              uno es falta de capability, el otro es violación de jerarquía. Los consumidores
+              distinguen por code.
+            </td>
+            <td><span class="badge br">RECHAZO</span></td>
+          </tr>
+
+          <tr class="dr" data-sec="DENY" data-tipo="rechazo">
+            <td class="id rec">GD-DENY-04</td>
+            <td class="obj">
+              Agente Bearer con scopes insuficientes en el token intenta POST /api/rbac/roles —
+              access_denied<span class="meta"
+                >Bearer · Client Credentials · ADR-010 · mismo pipeline authz</span
+              >
+            </td>
+            <td class="inp">
+              Authorization = Bearer &lt;token_sin_scope_assign&gt;<br />endpoint = POST
+              /api/rbac/roles<br />método = POST
+            </td>
+            <td class="out rec">
+              RECHAZADO<br /><span style="font-weight: 400; font-size: 11px"
+                >HTTP 403 · { code: "access_denied" }</span
+              >
+            </td>
+            <td class="crit">
+              El pipeline Bearer sigue authenticate → buildAccessContext → authz.require. No existe
+              camino privilegiado para agentes. Mismo error_code que el path web.
+            </td>
+            <td><span class="badge br">RECHAZO</span></td>
+          </tr>
+
+          <!-- ═══════════════════════════════════════════════ ERR ═══ -->
+          <tr class="sh" data-sh="ERR">
+            <td colspan="8">
+              D — Errores de Validación y Token
+              <span>3 casos · JWT · claimsToSubject · catálogo capabilities</span>
+            </td>
+          </tr>
+
+          <tr class="dr" data-sec="ERR" data-tipo="error">
+            <td class="id">GD-ERR-01</td>
+            <td class="obj">
+              Token JWT malformado — debe devolver unauthenticated sin exponer internals del
+              parser<span class="meta">middleware.rbacAuth · JWT · ADR-010 · seguridad</span>
+            </td>
+            <td class="inp">
+              Authorization = Bearer MALFORMED_TOKEN_XYZ<br />endpoint = GET /api/rbac/matrix
+            </td>
+            <td class="out rec">
+              HTTP 401<br /><span style="font-weight: 400; font-size: 11px"
+                >{ code: "unauthenticated" } · sin stack trace</span
+              >
+            </td>
+            <td class="crit">
+              La respuesta NO debe exponer el error interno del JWT parser. Mismo formato que token
+              ausente. No "JsonWebTokenError: ..." ni stack trace.
+            </td>
+            <td><span class="badge be">Error validación</span></td>
+          </tr>
+
+          <tr class="dr" data-sec="ERR" data-tipo="error">
+            <td class="id">GD-ERR-02</td>
+            <td class="obj">
+              Token válido pero claims contienen sub vacío — claimsToSubject debe rechazarlo en
+              buildAccessContext<span class="meta"
+                >claimsToSubject · buildAccessContext · ADR-005 · ADR-010</span
+              >
+            </td>
+            <td class="inp">
+              token con sub = "" (string vacío)<br />endpoint = GET /api/rbac/matrix
+            </td>
+            <td class="out rec">
+              HTTP 401<br /><span style="font-weight: 400; font-size: 11px"
+                >{ code: "unauthenticated" } · sub inválido</span
+              >
+            </td>
+            <td class="crit">
+              claimsToSubject debe rechazar sub vacío o nulo. No debe construir un AccessContext con
+              subject_id vacío. Mismo error_code que token ausente.
+            </td>
+            <td><span class="badge be">Error validación</span></td>
+          </tr>
+
+          <tr class="dr" data-sec="ERR" data-tipo="gap">
+            <td class="id gap">GD-ERR-03</td>
+            <td class="obj">
+              Código de capability requerido no existe en el catálogo — comportamiento controlado
+              sin 500<span class="meta">authz.require · catálogo capabilities · GAP-ERR-01</span>
+            </td>
+            <td class="inp">authz.require("rbac.accion.inexistente")<br />subject = AdminRBAC</td>
+            <td class="out blk">
+              BLOQUEADO<br /><span style="font-weight: 400; font-size: 11px"
+                >GAP-ERR-01: definir error_code</span
+              >
+            </td>
+            <td class="crit">
+              No implementar hasta definir: ¿debe devolver "unknown_capability" (HTTP 500) o
+              silenciosamente access_denied (HTTP 403)? Nunca debe generar 500 sin code estable.
+              GAP-ERR-01.
+            </td>
+            <td><span class="badge bg">GAP</span></td>
+          </tr>
+
+          <!-- ═══════════════════════════════════════════════ RT ═══ -->
+          <tr class="sh" data-sh="RT">
+            <td colspan="8">
+              E — Runtime, Resiliencia y Idempotencia
+              <span>4 casos · Toxiproxy · AppAuditWriter · Bearer pipeline</span>
+            </td>
+          </tr>
+
+          <tr class="dr" data-sec="RT" data-tipo="runtime">
+            <td class="id">GD-RT-01</td>
+            <td class="obj">
+              Agente con Bearer (Client Credentials) sigue el mismo pipeline authz que la web — sin
+              camino privilegiado<span class="meta"
+                >Bearer · Client Credentials · ADR-010 · mismo pipeline</span
+              >
+            </td>
+            <td class="inp">
+              Authorization = Bearer &lt;client_cred_token_válido&gt;<br />endpoint = GET
+              /api/rbac/matrix<br />scope = rbac.matrix.view
+            </td>
+            <td class="out">
+              HTTP 200<br /><span style="font-weight: 400; font-size: 11px"
+                >AccessContextDto JSON · mismo pipeline que web</span
+              >
+            </td>
+            <td class="crit">
+              El token Bearer pasa por authenticate → buildAccessContext → authz.require. No hay
+              endpoint alternativo para agentes. El AccessContextDto es el mismo contrato que la web
+              consume.
+            </td>
+            <td><span class="badge brt">Runtime</span></td>
+          </tr>
+
+          <tr class="dr" data-sec="RT" data-tipo="runtime">
+            <td class="id">GD-RT-02</td>
+            <td class="obj">
+              IamAdapter no disponible (Toxiproxy inyecta timeout 3s) — error controlado, nunca 500
+              sin code<span class="meta">Toxiproxy · IamAdapter · resiliencia · ADR-010</span>
+            </td>
+            <td class="inp">
+              TEST_MODE = implementation<br />Toxiproxy inyecta timeout 3000ms en IamAdapter<br />subject
+              = cualquiera
+            </td>
+            <td class="out rec">
+              HTTP 401 o 503<br /><span style="font-weight: 400; font-size: 11px"
+                >{ code: "unauthenticated" o "iam_unavailable" }</span
+              >
+            </td>
+            <td class="crit">
+              Nunca debe devolver HTTP 500 con stack trace. El comportamiento exacto (401 vs 503,
+              code exacto) debe definirse en ADR. Test de Toxiproxy valida en Pipeline Nivel 2.
+            </td>
+            <td><span class="badge brt">Runtime</span></td>
+          </tr>
+
+          <tr class="dr" data-sec="RT" data-tipo="runtime">
+            <td class="id">GD-RT-03</td>
+            <td class="obj">
+              AppAuditWriter no disponible — el acceso sigue siendo PERMITIDO, audit queda en cola
+              para retry<span class="meta"
+                >AppAuditWriter · resiliencia · audit eventual · ADR-010</span
+              >
+            </td>
+            <td class="inp">
+              TEST_MODE = implementation<br />AppAuditWriter falla (conexión rechazada)<br />subject
+              = AdminRBAC<br />capability = rbac.roles.assign (tiene el permiso)
+            </td>
+            <td class="out">
+              PERMITIDO<br /><span style="font-weight: 400; font-size: 11px"
+                >HTTP 200 · evento_audit en cola retry</span
+              >
+            </td>
+            <td class="crit">
+              La indisponibilidad del audit NO debe bloquear el acceso. El audit es eventual. Si el
+              acceso se bloquea por fallo del audit → bug de diseño grave.
+            </td>
+            <td><span class="badge brt">Runtime</span></td>
+          </tr>
+
+          <tr class="dr" data-sec="RT" data-tipo="runtime">
+            <td class="id">GD-RT-04</td>
+            <td class="obj">
+              Misma request para el mismo Subject produce AccessContext idéntico —
+              buildAccessContext es determinista<span class="meta"
+                >buildAccessContext · idempotencia · ADR-010</span
+              >
+            </td>
+            <td class="inp">
+              subject = Auditor<br />capability = rbac.audit.view<br />2 llamadas consecutivas en
+              100ms<br />sin cambios de roles entre llamadas
+            </td>
+            <td class="out">
+              AccessContext_1 == AccessContext_2<br /><span
+                style="font-weight: 400; font-size: 11px"
+                >capabilities idénticas · roles idénticos</span
+              >
+            </td>
+            <td class="crit">
+              buildAccessContext es determinista para el mismo Subject sin cambios de roles. Si los
+              resultados difieren → estado mutable no controlado, bug de concurrencia.
+            </td>
+            <td><span class="badge brt">Runtime</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      var MAINT_STORE_KEY = 'rbac-golden-maintenance-v1'
+      var maintStore = loadMaintStore()
+      var editMode = false
+      var builtCaseMarkdown = ''
+      var tipoCfg = {
+        'normal': { label: 'Caso normal', cls: 'bn' },
+        'borde': { label: 'Caso borde', cls: 'bb' },
+        'rechazo': { label: 'RECHAZO', cls: 'br' },
+        'error': { label: 'Error validación', cls: 'be' },
+        'gap': { label: 'GAP', cls: 'bg' },
+        'gap-critico': { label: 'GAP crítico', cls: 'bgc' },
+        'historico': { label: 'Histórico', cls: 'bh' },
+        'runtime': { label: 'Runtime', cls: 'brt' },
+      }
+      var estadoLabels = {
+        propuesto: 'Propuesto',
+        aprobado: 'Aprobado',
+        pendiente: 'Pendiente',
+        bloqueado: 'Bloqueado',
+        fuera_alcance: 'Fuera de alcance',
+        aprobado_condicionado: 'Aprobado condicionado',
+        en_revision: 'En revisión',
+      }
+      function loadMaintStore() {
+        try {
+          return JSON.parse(localStorage.getItem(MAINT_STORE_KEY) || '{"rows":{},"newCaseKeys":[]}')
+        } catch (e) {
+          return { rows: {}, newCaseKeys: [] }
+        }
+      }
+      function saveMaintStore() {
+        localStorage.setItem(MAINT_STORE_KEY, JSON.stringify(maintStore))
+      }
+      function htmlEscape(s) {
+        return String(s || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+      }
+      function nl2br(s) {
+        return htmlEscape(s).replace(/\n/g, '<br>')
+      }
+      function tipoBadge(tipo) {
+        var cfg = tipoCfg[tipo] || tipoCfg.normal
+        return '<span class="badge ' + cfg.cls + '">' + cfg.label + '</span>'
+      }
+      function tipoSelect(tipo) {
+        return (
+          '<select class="type-select">' +
+          Object.keys(tipoCfg)
+            .map(function (k) {
+              return (
+                '<option value="' +
+                k +
+                '" ' +
+                (k === tipo ? 'selected' : '') +
+                '>' +
+                tipoCfg[k].label +
+                '</option>'
+              )
+            })
+            .join('') +
+          '</select>'
+        )
+      }
+      function defaultEstadoForTipo(tipo) {
+        if (tipo === 'gap' || tipo === 'gap-critico') return 'bloqueado'
+        return 'propuesto'
+      }
+      function getCaseKey(row) {
+        if (!row.dataset.caseKey) {
+          var id =
+            normTxt(row.children[0]) ||
+            'case-' + Date.now() + '-' + Math.random().toString(16).slice(2)
+          row.dataset.caseKey = id
+        }
+        return row.dataset.caseKey
+      }
+      function rowData(row) {
+        var key = getCaseKey(row)
+        if (!maintStore.rows[key]) maintStore.rows[key] = {}
+        return maintStore.rows[key]
+      }
+      function saveRow(row) {
+        var key = getCaseKey(row)
+        var state = row.querySelector('.case-state')
+        var type = row.querySelector('.type-select')
+        var owner = row.querySelector('.owner-input')
+        var notes = row.querySelector('.case-notes textarea')
+        maintStore.rows[key] = {
+          sec: row.dataset.sec || '',
+          tipo: type ? type.value : row.dataset.tipo || 'normal',
+          newCase: row.dataset.newCase === 'true',
+          cells: Array.from(row.children)
+            .slice(0, 5)
+            .map(function (td) {
+              return td.innerHTML
+            }),
+          estado: state ? state.value : defaultEstadoForTipo(row.dataset.tipo),
+          responsable: owner ? owner.value : '',
+          notas: notes ? notes.value : '',
+        }
+        saveMaintStore()
+        buildValidation(document.querySelectorAll('tr.dr'))
+      }
+      function restoreNewRows() {
+        ;(maintStore.newCaseKeys || []).forEach(function (key) {
+          if (
+            Array.from(document.querySelectorAll('tr.dr')).some(function (r) {
+              return r.dataset.caseKey === key
+            })
+          )
+            return
+          var data = maintStore.rows[key]
+          if (!data || !data.cells) return
+          var row = document.createElement('tr')
+          row.className = 'dr new-case'
+          row.dataset.sec = data.sec || 'ACCESO'
+          row.dataset.tipo = data.tipo || 'normal'
+          row.dataset.caseKey = key
+          row.dataset.newCase = 'true'
+          row.innerHTML =
+            (data.cells || [])
+              .slice(0, 5)
+              .map(function (cell, idx) {
+                var cls = ['id', 'obj', 'inp', 'out', 'crit'][idx] || ''
+                return '<td class="' + cls + '">' + (cell || '') + '</td>'
+              })
+              .join('') + '<td></td>'
+          insertRowInSection(row, row.dataset.sec)
+        })
+      }
+      function setupMaintRows() {
+        restoreNewRows()
+        document.querySelectorAll('tr.dr').forEach(setupMaintRow)
+      }
+      function setupMaintRow(row) {
+        if (row.dataset.maintReady === 'true') return
+        var key = getCaseKey(row)
+        var data = maintStore.rows[key]
+        if (data && data.cells) {
+          Array.from(row.children)
+            .slice(0, 5)
+            .forEach(function (td, idx) {
+              if (typeof data.cells[idx] === 'string') td.innerHTML = data.cells[idx]
+            })
+          if (data.sec) row.dataset.sec = data.sec
+          if (data.tipo) row.dataset.tipo = data.tipo
+        }
+        if (!row.children[5]) row.appendChild(document.createElement('td'))
+        row.children[5].innerHTML = tipoSelect(row.dataset.tipo || 'normal')
+        row.querySelector('.type-select').addEventListener('change', function () {
+          row.dataset.tipo = this.value
+          saveRow(row)
+          fil()
+        })
+        Array.from(row.children)
+          .slice(1, 5)
+          .forEach(function (td) {
+            td.addEventListener('input', function () {
+              saveRow(row)
+            })
+            td.addEventListener('blur', function () {
+              saveRow(row)
+            })
+          })
+        var estado = (data && data.estado) || defaultEstadoForTipo(row.dataset.tipo)
+        var responsable = (data && data.responsable) || ''
+        var notas = (data && data.notas) || ''
+        var stateTd = document.createElement('td')
+        stateTd.className = 'maint-state'
+        stateTd.innerHTML =
+          '<select class="case-state">' +
+          Object.keys(estadoLabels)
+            .map(function (k) {
+              return (
+                '<option value="' +
+                k +
+                '" ' +
+                (k === estado ? 'selected' : '') +
+                '>' +
+                estadoLabels[k] +
+                '</option>'
+              )
+            })
+            .join('') +
+          '</select>'
+        var ownerTd = document.createElement('td')
+        ownerTd.className = 'maint-owner'
+        ownerTd.innerHTML =
+          '<input class="owner-input" type="text" placeholder="Responsable" value="' +
+          htmlEscape(responsable) +
+          '"><details class="case-notes"><summary>Notas</summary><textarea placeholder="Notas, fuente, evidencia, acuerdo o pendiente">' +
+          htmlEscape(notas) +
+          '</textarea></details><button class="btn build-case" type="button">Armar caso</button>'
+        row.appendChild(stateTd)
+        row.appendChild(ownerTd)
+        row.querySelector('.case-state').addEventListener('change', function () {
+          saveRow(row)
+          fil()
+        })
+        row.querySelector('.owner-input').addEventListener('input', function () {
+          saveRow(row)
+        })
+        row.querySelector('.case-notes textarea').addEventListener('input', function () {
+          saveRow(row)
+        })
+        row.querySelector('.build-case').addEventListener('click', function () {
+          buildCaseFromRow(row)
+        })
+        row.dataset.maintReady = 'true'
+      }
+      function objectiveWithoutMeta(row) {
+        var cell = row.children[1]
+        if (!cell) return ''
+        var clone = cell.cloneNode(true)
+        clone.querySelectorAll('.meta').forEach(function (m) {
+          m.remove()
+        })
+        return normTxt(clone)
+      }
+      function metaFromRow(row) {
+        var meta = row.children[1] ? row.children[1].querySelector('.meta') : null
+        return meta ? normTxt(meta) : ''
+      }
+      function stateLabel(value) {
+        return estadoLabels[value] || value || 'Propuesto'
+      }
+      function inferNegativeCriterion(tipo, salida, criterio) {
+        var joined = (salida + ' ' + criterio).trim()
+        if (/rechazo|error|gap|gap-critico/i.test(tipo))
+          return joined || 'Caso negativo o bloqueado; confirmar causal esperada con el equipo.'
+        if (
+          /rechaz|bloque|no debe|error|access_denied|unauthenticated|relation_violation/i.test(
+            joined
+          )
+        )
+          return joined
+        return 'No definido explícitamente en la fila. Completar si aplica: cuándo RBAC debe rechazar, bloquear o devolver error_code.'
+      }
+      function inferFundamento(meta, criterio) {
+        var base = []
+        if (meta) base.push(meta)
+        if (
+          /ADR|capability|IamAdapter|AccessContext|Entra|rbac\.|claim|scope|Bearer|authz|middleware|OIDC|JWT|relation_violation|access_denied|unauthenticated|Toxiproxy|GAP/i.test(
+            criterio
+          )
+        )
+          base.push(criterio)
+        if (!base.length)
+          return 'Pendiente: indicar ADR, regla del capability-map o definición validada por Arquitectura/Seguridad.'
+        return base.join('\n')
+      }
+      function inferTolerance(criterio) {
+        if (
+          /exactamente|exact|igual|debe ser|no debe|≤|<=|count|length|0|mismo|idéntico|sin duplicados/i.test(
+            criterio
+          )
+        )
+          return criterio
+        return (
+          'Pendiente de confirmar tolerancia. Criterio actual de la fila:\n' +
+          (criterio || 'Sin criterio registrado.')
+        )
+      }
+      function buildCaseFields(row) {
+        var id = normTxt(row.children[0])
+        var tipo = row.dataset.tipo || 'normal'
+        var escenario = objectiveWithoutMeta(row)
+        var entrada = cellTextWithBreaks(row.children[2])
+        var salida = cellTextWithBreaks(row.children[3])
+        var criterio = cellTextWithBreaks(row.children[4])
+        var meta = metaFromRow(row)
+        var estadoEl = row.querySelector('.case-state')
+        var ownerEl = row.querySelector('.owner-input')
+        var notesEl = row.querySelector('.case-notes textarea')
+        var estado = stateLabel(estadoEl ? estadoEl.value : 'propuesto')
+        var responsable =
+          ownerEl && ownerEl.value.trim() ? ownerEl.value.trim() : 'Pendiente de asignar'
+        var notas =
+          notesEl && notesEl.value.trim() ? notesEl.value.trim() : 'Sin notas registradas.'
+        return {
+          id: id,
+          tipo: tipoCfg[tipo] ? tipoCfg[tipo].label : tipo,
+          escenario: escenario || 'Pendiente de completar escenario de negocio.',
+          entrada: entrada || 'Pendiente de completar datos de entrada.',
+          resultado: salida || 'Pendiente de completar resultado esperado.',
+          fundamento: inferFundamento(meta, criterio),
+          negativo: inferNegativeCriterion(tipo, salida, criterio),
+          tolerancia: inferTolerance(criterio),
+          responsable: responsable,
+          estado: estado,
+          notas: notas,
+          criterio: criterio || 'Pendiente de criterio de aceptación.',
+        }
+      }
+      function caseAcceptanceText(f) {
+        return (
+          'Dado el caso ' +
+          f.id +
+          '\n' +
+          'Y el escenario de negocio: ' +
+          f.escenario +
+          '\n' +
+          'Y con los datos de entrada:\n' +
+          f.entrada +
+          '\n\n' +
+          'Cuando RBAC procese la solicitud de autorización\n\n' +
+          'Entonces debe obtener el resultado esperado:\n' +
+          f.resultado +
+          '\n' +
+          'Y debe cumplir el criterio de aceptación:\n' +
+          f.criterio +
+          '\n' +
+          'Y el caso debe quedar en estado "' +
+          f.estado +
+          '"'
+        )
+      }
+      function caseMarkdown(f) {
+        return (
+          '# Caso Golden ' +
+          f.id +
+          '\n\n' +
+          '| Campo | Valor |\n|---|---|\n' +
+          '| ID del caso | `' +
+          f.id +
+          '` |\n' +
+          '| Tipo | ' +
+          f.tipo +
+          ' |\n' +
+          '| Escenario de negocio | ' +
+          f.escenario.replace(/\n/g, '<br>') +
+          ' |\n' +
+          '| Datos de entrada | ' +
+          f.entrada.replace(/\n/g, '<br>') +
+          ' |\n' +
+          '| Resultado esperado | ' +
+          f.resultado.replace(/\n/g, '<br>') +
+          ' |\n' +
+          '| Fundamento | ' +
+          f.fundamento.replace(/\n/g, '<br>') +
+          ' |\n' +
+          '| Criterio negativo | ' +
+          f.negativo.replace(/\n/g, '<br>') +
+          ' |\n' +
+          '| Tolerancia | ' +
+          f.tolerancia.replace(/\n/g, '<br>') +
+          ' |\n' +
+          '| Responsable | ' +
+          f.responsable +
+          ' |\n' +
+          '| Estado | ' +
+          f.estado +
+          ' |\n' +
+          '| Notas | ' +
+          f.notas.replace(/\n/g, '<br>') +
+          ' |\n\n' +
+          '## Criterio de aceptación\n\n```text\n' +
+          caseAcceptanceText(f) +
+          '\n```\n'
+        )
+      }
+      function buildCaseFromRow(row) {
+        saveRow(row)
+        var f = buildCaseFields(row)
+        var body = document.getElementById('caseBuilderBody')
+        var acceptance = document.getElementById('caseBuilderAcceptance')
+        var rows = [
+          ['ID del caso', '`' + f.id + '`'],
+          ['Tipo', f.tipo],
+          ['Escenario de negocio', f.escenario],
+          ['Datos de entrada', f.entrada],
+          ['Resultado esperado', f.resultado],
+          ['Fundamento', f.fundamento],
+          ['Criterio negativo', f.negativo],
+          ['Tolerancia', f.tolerancia],
+          ['Responsable', f.responsable],
+          ['Estado', f.estado],
+          ['Notas', f.notas],
+        ]
+        body.innerHTML = rows
+          .map(function (r) {
+            return (
+              '<tr><td>' +
+              htmlEscape(r[0]) +
+              '</td><td>' +
+              htmlEscape(r[1]).replace(/`([^`]+)`/g, '<code>$1</code>') +
+              '</td></tr>'
+            )
+          })
+          .join('')
+        acceptance.textContent = caseAcceptanceText(f)
+        builtCaseMarkdown = caseMarkdown(f)
+        var panel = document.getElementById('caseBuilderPanel')
+        panel.hidden = false
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+      function copyBuiltCase() {
+        if (!builtCaseMarkdown) {
+          alert('Primero arma un caso desde una fila.')
+          return
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(builtCaseMarkdown).catch(function () {
+            fallbackCopy(builtCaseMarkdown)
+          })
+        } else fallbackCopy(builtCaseMarkdown)
+      }
+      function fallbackCopy(text) {
+        var ta = document.createElement('textarea')
+        ta.value = text
+        document.body.appendChild(ta)
+        ta.select()
+        document.execCommand('copy')
+        ta.remove()
+      }
+      function exportBuiltCase() {
+        if (!builtCaseMarkdown) {
+          alert('Primero arma un caso desde una fila.')
+          return
+        }
+        var blob = new Blob([builtCaseMarkdown], { type: 'text/markdown' })
+        var url = URL.createObjectURL(blob)
+        var a = document.createElement('a')
+        a.href = url
+        a.download = 'Caso_Golden_RBAC.md'
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        URL.revokeObjectURL(url)
+      }
+      function setEditMode(on) {
+        editMode = on
+        document.body.classList.toggle('editing', on)
+        document.querySelectorAll('tr.dr').forEach(function (row) {
+          Array.from(row.children)
+            .slice(1, 5)
+            .forEach(function (td) {
+              td.contentEditable = on ? 'true' : 'false'
+            })
+          if (row.children[0]) row.children[0].contentEditable = 'false'
+          if (row.children[5]) row.children[5].contentEditable = 'false'
+        })
+        var btn = document.getElementById('toggleEdit')
+        if (btn) btn.textContent = 'Modo edición: ' + (on ? 'ON' : 'OFF')
+      }
+      function insertRowInSection(row, sec) {
+        var rows = Array.from(document.querySelectorAll('tr.dr[data-sec="' + sec + '"]'))
+        if (rows.length) {
+          rows[rows.length - 1].after(row)
+          return
+        }
+        var header = document.querySelector('tr.sh[data-sh="' + sec + '"]')
+        if (header) header.after(row)
+        else document.getElementById('TB').appendChild(row)
+      }
+      function clearNewCaseForm() {
+        ;['newId', 'newOwner', 'newObj', 'newInp', 'newOut', 'newCrit', 'newNotes'].forEach(
+          function (id) {
+            var el = document.getElementById(id)
+            if (el) el.value = ''
+          }
+        )
+        document.getElementById('newSec').value = 'ACCESO'
+        document.getElementById('newTipo').value = 'normal'
+        document.getElementById('newEstado').value = 'propuesto'
+      }
+      function addNewCase() {
+        var id = document.getElementById('newId').value.trim()
+        if (!id) {
+          alert('Debes indicar un ID de caso.')
+          return
+        }
+        var exists = Array.from(document.querySelectorAll('tr.dr td.id')).some(function (td) {
+          return normTxt(td) === id
+        })
+        if (exists) {
+          alert('Ya existe un caso con ese ID.')
+          return
+        }
+        var sec = document.getElementById('newSec').value
+        var tipo = document.getElementById('newTipo').value
+        var estado = document.getElementById('newEstado').value
+        var key = id
+        var row = document.createElement('tr')
+        row.className = 'dr new-case'
+        row.dataset.sec = sec
+        row.dataset.tipo = tipo
+        row.dataset.caseKey = key
+        row.dataset.newCase = 'true'
+        row.innerHTML =
+          '<td class="id">' +
+          htmlEscape(id) +
+          '</td>' +
+          '<td class="obj">' +
+          nl2br(document.getElementById('newObj').value) +
+          '</td>' +
+          '<td class="inp">' +
+          nl2br(document.getElementById('newInp').value) +
+          '</td>' +
+          '<td class="out">' +
+          nl2br(document.getElementById('newOut').value) +
+          '</td>' +
+          '<td class="crit">' +
+          nl2br(document.getElementById('newCrit').value) +
+          '</td>' +
+          '<td></td>'
+        insertRowInSection(row, sec)
+        if (!maintStore.newCaseKeys) maintStore.newCaseKeys = []
+        if (!maintStore.newCaseKeys.includes(key)) maintStore.newCaseKeys.push(key)
+        maintStore.rows[key] = {
+          sec: sec,
+          tipo: tipo,
+          newCase: true,
+          cells: Array.from(row.children)
+            .slice(0, 5)
+            .map(function (td) {
+              return td.innerHTML
+            }),
+          estado: estado,
+          responsable: document.getElementById('newOwner').value.trim(),
+          notas: document.getElementById('newNotes').value,
+        }
+        saveMaintStore()
+        setupMaintRow(row)
+        setEditMode(editMode)
+        clearNewCaseForm()
+        fil()
+      }
+      function exportMaint() {
+        var payload = {
+          exported_at: new Date().toISOString(),
+          source: 'GoldenDataSet_RBAC.html',
+          rows: maintStore.rows || {},
+          newCaseKeys: maintStore.newCaseKeys || [],
+        }
+        var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+        var url = URL.createObjectURL(blob)
+        var a = document.createElement('a')
+        a.href = url
+        a.download = 'GoldenDataSet_RBAC_cambios.json'
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        URL.revokeObjectURL(url)
+      }
+      function clearMaint() {
+        if (
+          !confirm(
+            '¿Limpiar todos los cambios locales, responsables, estados, notas y casos agregados en este navegador?'
+          )
+        )
+          return
+        localStorage.removeItem(MAINT_STORE_KEY)
+        location.reload()
+      }
+      function bindMaintControls() {
+        document.getElementById('toggleEdit').addEventListener('click', function () {
+          setEditMode(!editMode)
+        })
+        document.getElementById('exportMaint').addEventListener('click', exportMaint)
+        document.getElementById('clearMaint').addEventListener('click', clearMaint)
+        document.getElementById('addCase').addEventListener('click', addNewCase)
+        document.getElementById('clearNewCase').addEventListener('click', clearNewCaseForm)
+        document.getElementById('closeCaseBuilder').addEventListener('click', function () {
+          document.getElementById('caseBuilderPanel').hidden = true
+        })
+        document.getElementById('copyBuiltCase').addEventListener('click', copyBuiltCase)
+        document.getElementById('exportBuiltCase').addEventListener('click', exportBuiltCase)
+      }
+      function fil() {
+        var sec = document.getElementById('fSec').value
+        var tipo = document.getElementById('fTipo').value
+        var estado = document.getElementById('fEstado').value
+        var q = document.getElementById('fQ').value.toLowerCase()
+        var rows = document.querySelectorAll('tr.dr')
+        var cnt = 0
+        rows.forEach(function (r) {
+          var ms = !sec || r.dataset.sec === sec
+          var mt = !tipo || r.dataset.tipo === tipo
+          var stateEl = r.querySelector('.case-state')
+          var me = !estado || (stateEl && stateEl.value === estado)
+          var mq = !q || r.textContent.toLowerCase().indexOf(q) >= 0
+          if (ms && mt && me && mq) {
+            r.classList.remove('hidden')
+            cnt++
+          } else r.classList.add('hidden')
+        })
+        document.getElementById('stats').textContent = cnt + ' casos visibles'
+        document.querySelectorAll('tr.sh').forEach(function (h) {
+          var sh = h.dataset.sh
+          var vis = document.querySelectorAll('tr.dr:not(.hidden)[data-sec="' + sh + '"]').length
+          if (vis > 0) h.classList.remove('hidden')
+          else h.classList.add('hidden')
+        })
+        updCounts(rows)
+      }
+      function setTxt(id, val) {
+        var el = document.getElementById(id)
+        if (el) el.textContent = val
+      }
+      function updCounts(rows) {
+        var totals = {
+          'normal': 0,
+          'borde': 0,
+          'rechazo': 0,
+          'error': 0,
+          'gap': 0,
+          'gap-critico': 0,
+          'historico': 0,
+          'runtime': 0,
+        }
+        rows.forEach(function (r) {
+          var tipo = r.dataset.tipo
+          if (Object.prototype.hasOwnProperty.call(totals, tipo)) totals[tipo]++
+        })
+        setTxt('ct-normal', totals.normal)
+        setTxt('ct-borde', totals.borde)
+        setTxt('ct-rechazo', totals.rechazo)
+        setTxt('ct-error', totals.error)
+        setTxt('ct-gap', totals.gap)
+        setTxt('ct-gap-critico', totals['gap-critico'])
+        setTxt('ct-historico', totals.historico)
+        setTxt('ct-runtime', totals.runtime)
+        setTxt('ct-total', rows.length)
+        setTxt('totalCasesHeader', rows.length)
+        buildValidation(rows)
+      }
+      function vBadge(txt, cls) {
+        return '<span class="vbadge ' + cls + '">' + txt + '</span>'
+      }
+      function normTxt(el) {
+        return (el ? el.textContent : '').replace(/\s+/g, ' ').trim()
+      }
+      function cellTextWithBreaks(el) {
+        if (!el) return ''
+        var clone = el.cloneNode(true)
+        clone.querySelectorAll('br').forEach(function (br) {
+          br.replaceWith(document.createTextNode('\n'))
+        })
+        clone.querySelectorAll('.meta').forEach(function (meta) {
+          meta.before(document.createTextNode('\n'))
+        })
+        return clone.textContent
+          .split('\n')
+          .map(function (line) {
+            return line.replace(/\s+/g, ' ').trim()
+          })
+          .filter(Boolean)
+          .join('\n')
+      }
+      function buildValidation(rows) {
+        var body = document.getElementById('validationBody')
+        if (!body) return
+        var total = 0,
+          tech = 0,
+          blockedCount = 0,
+          official = 0
+        var html = ''
+        rows.forEach(function (r) {
+          total++
+          var cells = r.children
+          var id = normTxt(cells[0])
+          var objetivo = normTxt(cells[1])
+          var entrada = cellTextWithBreaks(cells[2])
+          var salida = cellTextWithBreaks(cells[3])
+          var criterio = cellTextWithBreaks(cells[4])
+          var tipo = r.dataset.tipo || ''
+          var all = Array.from(cells).slice(0, 6).map(normTxt).join(' ')
+          var ownerEl = r.querySelector('.owner-input')
+          var stateEl = r.querySelector('.case-state')
+          var state = stateEl ? stateEl.value : 'propuesto'
+          var owner = ownerEl ? ownerEl.value.trim() : ''
+          var blocked = tipo === 'gap' || tipo === 'gap-critico' || /BLOQUEADO/i.test(salida)
+          var escenarioOk = objetivo.length > 20
+          var entradaOk = entrada.length > 8
+          var resultadoOk = salida.length > 2
+          var fundamentoOk =
+            /ADR|capability|IamAdapter|AccessContext|Entra|rbac\.|authz|middleware|OIDC|JWT|relation_violation|access_denied|unauthenticated|Toxiproxy|GAP|Bearer|scope/i.test(
+              all
+            )
+          var negativoOk =
+            /rechazo|error|gap|gap-critico/i.test(tipo) ||
+            /rechaz|bloque|no debe|access_denied|unauthenticated|relation_violation|RECHAZADO|403|401/i.test(
+              all
+            )
+          var negativoNa = !negativoOk && /normal|borde|runtime/i.test(tipo)
+          var toleranciaOk =
+            criterio.length > 8 &&
+            /exactamente|exact|igual|debe ser|no debe|≤|<=|count|length|mismo|idéntico|sin duplicados|0|nunca|siempre/i.test(
+              criterio
+            )
+          var responsableOk = owner.length > 0
+          var estadoOk = salida.length > 2 || tipo.length > 0
+          var mainOk =
+            escenarioOk && entradaOk && resultadoOk && fundamentoOk && toleranciaOk && estadoOk
+          var diag = ''
+          if (blocked) {
+            blockedCount++
+            diag =
+              'Bloqueado: no usar como caso de aceptación hasta definir el comportamiento exacto y cerrar el GAP con Arquitectura/Seguridad.'
+          } else if (!mainOk) {
+            var miss = []
+            if (!escenarioOk) miss.push('escenario')
+            if (!entradaOk) miss.push('entrada')
+            if (!resultadoOk) miss.push('resultado')
+            if (!fundamentoOk) miss.push('fundamento ADR')
+            if (!toleranciaOk) miss.push('tolerancia/criterio')
+            if (!estadoOk) miss.push('estado')
+            diag = 'Incompleto técnicamente: falta ' + miss.join(', ') + '.'
+          } else {
+            tech++
+            diag =
+              'Técnicamente usable como caso candidato. Falta responsable/firma de Arquitectura o Seguridad para ser Golden oficial.'
+          }
+          if (mainOk && !blocked && responsableOk && state === 'aprobado') official++
+          html += '<tr>'
+          html += '<td>' + id + '</td>'
+          html += '<td>' + tipo + '</td>'
+          html +=
+            '<td>' + (escenarioOk ? vBadge('OK', 'vok') : vBadge('Falta', 'vblocked')) + '</td>'
+          html += '<td>' + (entradaOk ? vBadge('OK', 'vok') : vBadge('Falta', 'vblocked')) + '</td>'
+          html +=
+            '<td>' + (resultadoOk ? vBadge('OK', 'vok') : vBadge('Falta', 'vblocked')) + '</td>'
+          html +=
+            '<td>' + (fundamentoOk ? vBadge('OK', 'vok') : vBadge('Parcial', 'vpartial')) + '</td>'
+          html +=
+            '<td>' +
+            (negativoOk
+              ? vBadge('OK', 'vok')
+              : negativoNa
+                ? vBadge('No aplica', 'vna')
+                : vBadge('Parcial', 'vpartial')) +
+            '</td>'
+          html +=
+            '<td>' + (toleranciaOk ? vBadge('OK', 'vok') : vBadge('Parcial', 'vpartial')) + '</td>'
+          html +=
+            '<td>' +
+            (responsableOk ? vBadge('OK', 'vok') : vBadge('Pendiente firma', 'vpartial')) +
+            '</td>'
+          html +=
+            '<td>' +
+            (blocked
+              ? vBadge('Bloqueado', 'vblocked')
+              : mainOk && state === 'aprobado' && responsableOk
+                ? vBadge('Oficial', 'vok')
+                : mainOk
+                  ? vBadge('Candidato', 'vpartial')
+                  : vBadge('Incompleto', 'vblocked')) +
+            '</td>'
+          html += '<td class="diag">' + diag + '</td>'
+          html += '</tr>'
+        })
+        body.innerHTML = html
+        setTxt('val-total', total)
+        setTxt('val-tech', tech)
+        setTxt('val-blocked', blockedCount)
+        setTxt('val-official', official)
+      }
+      setupMaintRows()
+      bindMaintControls()
+      setEditMode(false)
+      fil()
+    </script>
+  </body>
+</html>

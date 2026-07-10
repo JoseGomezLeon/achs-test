@@ -1,0 +1,51 @@
+version: '3.9'
+
+# Servicios de soporte para Pipeline Nivel 2 (tests de integración y contrato).
+# Para tests unitarios (suite 'unit') no se necesita levantar esto.
+# Uso: docker compose -f docker-compose.test.yml up -d
+
+services:
+  # Pact Broker — almacena contratos consumer/provider (suite 'compliance')
+  pact-broker:
+    image: pactfoundation/pact-broker:latest
+    ports:
+      - '9292:9292'
+    environment:
+      PACT_BROKER_DATABASE_ADAPTER: sqlite
+      PACT_BROKER_DATABASE_NAME: /tmp/pact_broker.sqlite
+      PACT_BROKER_BASIC_AUTH_USERNAME: admin
+      PACT_BROKER_BASIC_AUTH_PASSWORD: admin
+      PACT_BROKER_ALLOW_PUBLIC_READ: 'true'
+    volumes:
+      - pact-broker-data:/tmp
+
+  # Toxiproxy — proxy con inyección de fallos para tests de resiliencia
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:latest
+    ports:
+      - '8474:8474' # API de administración de Toxiproxy
+      - '5432:5432' # Proxy de Postgres (configurable vía toxiproxy.config.json)
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:8474/version']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Postgres — base de datos para tests de integración (Testcontainers puede levantar su propio)
+  # Solo se usa cuando no se usa Testcontainers.
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_DB: rbac_test
+      POSTGRES_USER: rbac
+      POSTGRES_PASSWORD: rbac_test_pass
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U rbac']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pact-broker-data:

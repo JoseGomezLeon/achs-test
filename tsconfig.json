@@ -1,0 +1,17 @@
+{
+  "extends": "@adonisjs/tsconfig/tsconfig.app.json",
+  "compilerOptions": {
+    "rootDir": "./",
+    "jsx": "react-jsx",
+    "outDir": "./build"
+  },
+  "exclude": [
+    "inertia/**",
+    "node_modules/**",
+    "build/**",
+    "docs/capability-map.test.ts",
+    "tests/beneficiosTest.spec.ts",
+    "tests/bdd/support/testcontainers.ts"
+  ],
+  "ts-node": { "transpileOnly": true }
+}

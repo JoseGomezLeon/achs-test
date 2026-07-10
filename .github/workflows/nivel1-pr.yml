@@ -1,0 +1,52 @@
+name: CI Nivel 1 — PR (~10 min)
+
+on:
+  pull_request:
+    branches: [main]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  nivel1:
+    name: lint + typecheck + unit @smoke + AFF + cobertura
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      # ── Lint + Typecheck ───────────────────────────────────────────
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # ── Unit tests con cobertura (c8 — umbral: líneas ≥ 80%) ──────
+      - name: Tests unitarios + cobertura
+        env:
+          NODE_ENV: test
+          TEST_MODE: architecture
+        run: |
+          npx c8 \
+            --reporter=text --reporter=lcov \
+            --include='app/modules/**/*.ts' \
+            --exclude='**/*.spec.ts' \
+            --lines 80 --branches 70 --functions 80 \
+            npx tsx bin/test.ts \
+            --files "$(find tests/unit -name '*.spec.ts' | tr '\n' ',' | sed 's/,$//')"
+
+      # ── AFF (Fitness Functions de Arquitectura) ────────────────────
+      - name: AFF — dep-cruiser
+        run: npx depcruise --config .dependency-cruiser.cjs app/modules

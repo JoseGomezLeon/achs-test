@@ -1,0 +1,203 @@
+name: CI Nivel 2 — Release/Nightly (~40 min)
+
+on:
+  schedule:
+    - cron: '0 2 * * *'   # nightly 02:00 UTC
+  workflow_dispatch:       # disparo manual para pruebas
+  pull_request:            # temporal — validar pdeploy en feature branch; remover al hacer merge
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  nivel2:
+    name: BDD + Docker build + k6 + Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+
+    permissions:
+      contents: write    # para crear tags y releases
+      packages: write    # para push a GHCR (GitHub Container Registry)
+
+    env:
+      NODE_ENV: test
+      PORT: 3333
+      HOST: 0.0.0.0
+      LOG_LEVEL: warn
+      APP_KEY: ${{ secrets.APP_KEY }}
+      APP_URL: http://localhost:3333
+      SESSION_DRIVER: memory
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      # ── BDD (Desarrollo Guiado por Comportamiento) — 113 escenarios ──
+      # Los escenarios actuales usan stubs de dominio puro (sin DB).
+      # Cuando se implemente la capa de persistencia, activar Testcontainers
+      # cambiando TEST_MODE a "integration" y levantando Postgres aquí.
+      - name: BDD — 113 escenarios de comportamiento de negocio
+        env:
+          TEST_MODE: architecture
+        run: |
+          node --import tsx/esm ./node_modules/.bin/cucumber-js \
+            --import tests/bdd/support/world.ts \
+            --import 'tests/bdd/steps/**/*.ts' \
+            'tests/bdd/features/**/*.feature' \
+            --format allure-cucumberjs/reporter --format progress-bar
+
+      - name: Publicar reporte Allure (BDD)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-results-bdd
+          path: allure-results/
+          retention-days: 30
+
+      # ── k6 Performance smoke ───────────────────────────────────────
+      - name: Instalar k6
+        run: |
+          sudo snap install k6 || \
+          (curl -s https://packagecloud.io/install/repositories/loadimpact/k6/script.deb.sh | sudo bash && \
+           sudo apt-get install k6 -y)
+
+      - name: Levantar servidor AdonisJS
+        run: |
+          nohup npx tsx bin/server.ts > /tmp/server.log 2>&1 &
+          echo $! > /tmp/server.pid
+          npx wait-on http://localhost:3333/health --timeout 60000
+
+      - name: k6 — smoke test GET /health (30s · 1 VU · p95 < 2000ms)
+        run: k6 run tests/performance/k6-load.js
+
+      - name: Detener servidor
+        if: always()
+        run: |
+          kill $(cat /tmp/server.pid) 2>/dev/null || true
+          echo "=== Server log ===" && cat /tmp/server.log | tail -20 || true
+
+      # ── Pact — Contract Testing ────────────────────────────────────
+      # PLACEHOLDER: activar cuando exista un segundo servicio consumidor.
+      # Requiere: Pact Broker URL + credenciales en secrets.
+      # - name: Pact — verificar contratos del proveedor
+      #   run: npx tsx tests/contract/rbac/provider.ts
+      #   env:
+      #     PACT_BROKER_URL: ${{ secrets.PACT_BROKER_URL }}
+      #     PACT_BROKER_TOKEN: ${{ secrets.PACT_BROKER_TOKEN }}
+
+      # ── Docker build + healthcheck ─────────────────────────────────
+      - name: Docker build imagen RBAC
+        run: docker build -t pec-rbac:${{ github.sha }} .
+
+      - name: Docker healthcheck
+        run: |
+          docker run -d --name pec-rbac-test \
+            -e NODE_ENV=test -e PORT=3334 -e HOST=0.0.0.0 \
+            -e LOG_LEVEL=warn -e APP_KEY=test-key-32-chars-minimum-here \
+            -e APP_URL=http://localhost:3334 -e SESSION_DRIVER=memory \
+            -e DB_CONNECTION=sqlite -e DB_DATABASE=':memory:' \
+            -p 3334:3334 pec-rbac:${{ github.sha }}
+          sleep 5
+          curl -f http://localhost:3334/health || (docker logs pec-rbac-test && exit 1)
+          docker stop pec-rbac-test
+
+      # ── pdeployt1 + pdeployt2: Deploy a GHCR (staging) ────────────────
+      - name: Login a GHCR (GitHub Container Registry)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push imagen a GHCR — tag staging
+        id: push_staging
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          STAGING_IMAGE="ghcr.io/${OWNER}/pec-rbac:v${VERSION}-staging"
+          docker tag pec-rbac:${{ github.sha }} "${STAGING_IMAGE}"
+          docker push "${STAGING_IMAGE}"
+          echo "staging_image=${STAGING_IMAGE}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "owner=${OWNER}" >> $GITHUB_OUTPUT
+
+      # ── pdeployt3: Gates de staging ────────────────────────────────────
+      - name: k6 smoke contra contenedor staging
+        run: |
+          docker run -d --name pec-rbac-staging \
+            -e NODE_ENV=test -e PORT=3335 -e HOST=0.0.0.0 \
+            -e LOG_LEVEL=warn -e APP_KEY=test-key-32-chars-minimum-here \
+            -e APP_URL=http://localhost:3335 -e SESSION_DRIVER=memory \
+            -e DB_CONNECTION=sqlite -e DB_DATABASE=':memory:' \
+            -p 3335:3335 ${{ steps.push_staging.outputs.staging_image }}
+          npx wait-on http://localhost:3335/health --timeout 30000
+          BASE_URL=http://localhost:3335 k6 run tests/performance/k6-load.js
+          docker stop pec-rbac-staging
+
+      - name: Instalar Playwright + Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Build para E2E (el Docker build crea la imagen pero no deja archivos en el runner)
+        run: npm run build
+
+      - name: Preparar BD (base de datos) SQLite para E2E (extremo a extremo)
+        run: mkdir -p build/tmp && node build/ace.js migration:run
+        env:
+          NODE_ENV: production
+          SESSION_DRIVER: cookie
+
+      - name: Liberar puerto 3333 antes de E2E (procesos hijo de npx tsx sobreviven al kill del PID)
+        run: lsof -ti:3333 | xargs kill -9 2>/dev/null || true
+
+      - name: E2E Playwright — 20 escenarios RBAC (Control de Acceso Basado en Roles)
+        run: npx playwright test tests/e2e/rbac/rbac-acceso.spec.ts --reporter=list
+        env:
+          NODE_ENV: production
+          SESSION_DRIVER: cookie
+
+      - name: Publicar reporte Playwright E2E
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-e2e
+          path: playwright-report/
+          retention-days: 30
+
+      # ── pdeployt4: Deploy a producción — :latest + GitHub Release ──────
+      - name: Push imagen de producción (:latest + SemVer)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          VERSION=${{ steps.push_staging.outputs.version }}
+          OWNER=${{ steps.push_staging.outputs.owner }}
+          docker tag pec-rbac:${{ github.sha }} "ghcr.io/${OWNER}/pec-rbac:v${VERSION}"
+          docker tag pec-rbac:${{ github.sha }} "ghcr.io/${OWNER}/pec-rbac:latest"
+          docker push "ghcr.io/${OWNER}/pec-rbac:v${VERSION}"
+          docker push "ghcr.io/${OWNER}/pec-rbac:latest"
+
+      - name: GitHub Release + tag SemVer
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=${{ steps.push_staging.outputs.version }}
+          OWNER=${{ steps.push_staging.outputs.owner }}
+          TAG="v${VERSION}"
+          git config user.email "ci@github.com"
+          git config user.name "GitHub Actions"
+          git tag -a "${TAG}" -m "Release ${TAG}" 2>/dev/null || echo "Tag already exists"
+          git push origin "${TAG}" 2>/dev/null || echo "Tag already pushed"
+          gh release create "${TAG}" \
+            --title "Release ${TAG}" \
+            --notes "Imagen Docker: ghcr.io/${OWNER}/pec-rbac:${TAG}" \
+            2>/dev/null || echo "Release already exists"
