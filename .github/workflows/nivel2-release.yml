@@ -132,7 +132,7 @@ jobs:
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "owner=${OWNER}" >> $GITHUB_OUTPUT
 
-      # ── pdeployt3: Gates de staging — k6 smoke contra contenedor GHCR ──
+      # ── pdeployt3: Gates de staging ────────────────────────────────────
       - name: k6 smoke contra contenedor staging
         run: |
           docker run -d --name pec-rbac-staging \
@@ -144,6 +144,29 @@ jobs:
           npx wait-on http://localhost:3335/health --timeout 30000
           BASE_URL=http://localhost:3335 k6 run tests/performance/k6-load.js
           docker stop pec-rbac-staging
+
+      - name: Instalar Playwright + Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Preparar BD (base de datos) SQLite para E2E (extremo a extremo)
+        run: mkdir -p build/tmp && node build/ace.js migration:run
+        env:
+          NODE_ENV: development
+          SESSION_DRIVER: cookie
+
+      - name: E2E Playwright — 20 escenarios RBAC (Control de Acceso Basado en Roles)
+        run: npx playwright test tests/e2e/rbac/rbac-acceso.spec.ts --reporter=list
+        env:
+          NODE_ENV: development
+          SESSION_DRIVER: cookie
+
+      - name: Publicar reporte Playwright E2E
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-e2e
+          path: playwright-report/
+          retention-days: 30
 
       # ── pdeployt4: Deploy a producción — :latest + GitHub Release ──────
       - name: Push imagen de producción (:latest + SemVer)

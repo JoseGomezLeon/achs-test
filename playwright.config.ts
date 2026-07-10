@@ -15,10 +15,11 @@ export default defineConfig({
     },
   },
   webServer: {
-    command: 'npx tsx bin/server.ts',
-    url: 'http://localhost:3333',
+    // En CI (Integración Continua) usa el servidor compilado; localmente usa tsx directo
+    command: process.env.CI ? 'node build/bin/server.js' : 'npx tsx bin/server.ts',
+    url: 'http://localhost:3333/health',
     reuseExistingServer: !process.env.CI,
-    timeout: 30_000,
+    timeout: 60_000,
   },
   projects: [
     {
