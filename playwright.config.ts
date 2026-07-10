@@ -11,7 +11,8 @@ export default defineConfig({
     baseURL: 'http://localhost:3333',
     trace: 'on-first-retry',
     launchOptions: {
-      executablePath: '/usr/bin/google-chrome',
+      // Localmente usa Chrome del sistema; en CI (Integración Continua) Playwright usa su propio Chromium
+      executablePath: process.env.CI ? undefined : '/usr/bin/google-chrome',
     },
   },
   webServer: {
