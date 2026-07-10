@@ -190,6 +190,35 @@ El paso `docker build` crea una **imagen Docker**, no deja archivos compilados e
 
 ---
 
+### Playwright + Inertia/React — usar `waitUntil: 'networkidle'` en páginas SPA
+
+En páginas Inertia.js (Single Page Application con React), `page.goto('/ruta')` retorna al evento `load` del HTML, pero React hidrata **después** — cuando el bundle JS termina de descargarse y ejecutarse. Si el test intenta interactuar con elementos del DOM antes de que React haya montado los componentes, el `locator.fill()` espera 30 segundos y falla.
+
+**Regla:** en `page.goto()` para páginas Inertia/React, siempre esperar `networkidle`:
+
+```typescript
+await page.goto('/signup', { waitUntil: 'networkidle' })
+```
+
+`networkidle` espera hasta que no haya actividad de red por 500ms, garantizando que el bundle JS cargó y React pudo hidratar.
+
+---
+
+### Playwright en CI — agregar `--no-sandbox` para Chromium headless
+
+En runners de CI (Integración Continua) como GitHub Actions, Chromium en modo headless puede necesitar `--no-sandbox` y `--disable-setuid-sandbox` para ejecutarse correctamente dentro de contenedores sin privilegios.
+
+**Regla:** agregar estos args en `playwright.config.ts` para CI:
+
+```typescript
+launchOptions: {
+  executablePath: process.env.CI ? undefined : '/usr/bin/google-chrome',
+  args: process.env.CI ? ['--no-sandbox', '--disable-setuid-sandbox'] : [],
+},
+```
+
+---
+
 ### Playwright en CI — `executablePath` de Chrome debe ser condicional
 
 En máquinas locales con Chrome instalado, se puede especificar `executablePath: '/usr/bin/google-chrome'`. En CI (Integración Continua), después de `npx playwright install chromium --with-deps`, Playwright instala Chromium en su propio cache — no en `/usr/bin/google-chrome`. Pasar un path fijo rompe CI.

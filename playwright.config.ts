@@ -13,6 +13,7 @@ export default defineConfig({
     launchOptions: {
       // Localmente usa Chrome del sistema; en CI (Integración Continua) Playwright usa su propio Chromium
       executablePath: process.env.CI ? undefined : '/usr/bin/google-chrome',
+      args: process.env.CI ? ['--no-sandbox', '--disable-setuid-sandbox'] : [],
     },
   },
   webServer: {

@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test'
 export const PASSWORD = 'Test1234!'
 
 export async function loginAs(page: Page, email: string): Promise<void> {
-  await page.goto('/signup')
+  await page.goto('/signup', { waitUntil: 'networkidle' })
   await page.locator('#fullName').fill(email.split('@')[0])
   await page.locator('#email').fill(email)
   await page.locator('#password').fill(PASSWORD)
