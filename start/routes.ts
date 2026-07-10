@@ -40,7 +40,11 @@ router.get('/rbac-demo', ({ response }) => {
     },
     {
       nombre: 'Empresa Constructora SpA — Empleador externo',
-      claims: { sub: 'rut-76543210', achs_subject_kind: 'external' as const, achs_external_type: 'empleador' },
+      claims: {
+        sub: 'rut-76543210',
+        achs_subject_kind: 'external' as const,
+        achs_external_type: 'empleador',
+      },
     },
   ]
 
