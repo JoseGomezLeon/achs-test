@@ -154,7 +154,7 @@ jobs:
       - name: Preparar BD (base de datos) SQLite para E2E (extremo a extremo)
         run: mkdir -p build/tmp && node build/ace.js migration:run
         env:
-          NODE_ENV: development
+          NODE_ENV: production
           SESSION_DRIVER: cookie
 
       - name: Liberar puerto 3333 antes de E2E (procesos hijo de npx tsx sobreviven al kill del PID)
@@ -163,7 +163,7 @@ jobs:
       - name: E2E Playwright — 20 escenarios RBAC (Control de Acceso Basado en Roles)
         run: npx playwright test tests/e2e/rbac/rbac-acceso.spec.ts --reporter=list
         env:
-          NODE_ENV: development
+          NODE_ENV: production
           SESSION_DRIVER: cookie
 
       - name: Publicar reporte Playwright E2E
